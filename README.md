@@ -85,21 +85,22 @@
 
 ## 🚀 Panduan Instalasi Cepat
 
-### 1. Klon Repositori ke Direktori Lokal
-Jika repositori belum berada di mesin lokal:
+### Single-Command Bootstrap
+Jalankan satu perintah berikut untuk mengklon dan mengeksekusi pipeline secara otomatis:
 ```bash
-git clone https://github.com/<username>/dotfile_v2.git ~/Lab/dotfile_v2
-cd ~/Lab/dotfile_v2
+git clone https://github.com/parikesitad-pm/dotfile_v2.git ~/dotfiles && cd ~/dotfiles && ./setup.sh
 ```
 
-### 2. Jalankan Uji Coba Simulasi (Dry-Run)
+### Opsi Eksekusi Bertahap
+
+#### 1. Uji Coba Simulasi (Dry-Run)
 Pastikan semua target path dan dependensi terdeteksi tanpa mengubah file sistem:
 ```bash
 ./setup.sh --dry-run
 ```
 
-### 3. Eksekusi Pemasangan Otomatis
-Jalankan script untuk memasang seluruh paket inti, membuat symlink, dan memulihkan ekstensi VS Code:
+#### 2. Eksekusi Pemasangan Penuh
+Jalankan script untuk memasang seluruh paket inti, membuat symlink, mengatur pintasan macOS di GNOME, dan memulihkan ekstensi VS Code:
 ```bash
 ./setup.sh
 ```
@@ -276,6 +277,15 @@ GNOME di Wayland memiliki navigasi touchpad 1:1 multi-finger:
 - **Swipe 3 jari ke atas**: Buka Overview & Application Grid.
 - **Swipe 3 jari ke kiri/kanan**: Berpindah antar Workspace secara instan.
 - **Pinch 2 jari**: Zoom in/out pada aplikasi yang didukung.
+
+### 3. Pintasan Keyboard Bergaya macOS (Otomatis Dikonfigurasi di Phase C)
+| Shortcut | Fungsi GNOME | Skema GSettings |
+|---|---|---|
+| `Super + Shift + 3` | Tangkapan layar penuh (*Fullscreen Screenshot*) | `org.gnome.shell.keybindings screenshot` |
+| `Super + Shift + 4` | Tangkapan layar jendela/area aktif | `org.gnome.shell.keybindings screenshot-window` |
+| `Super + Shift + 5` | Buka UI Screenshot interaktif | `org.gnome.shell.keybindings show-screenshot-ui` |
+| `Super + Q` | Tutup jendela aktif (*Close Window*) | `org.gnome.desktop.wm.keybindings close` |
+| `Super + H` | Minimalkan jendela aktif (*Minimize*) | `org.gnome.desktop.wm.keybindings minimize` |
 
 ---
 

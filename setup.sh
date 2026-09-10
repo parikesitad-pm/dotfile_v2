@@ -27,7 +27,7 @@ readonly BACKUP_DIR="${HOME}/.dotfiles_backup/${TIMESTAMP}"
 DRY_RUN=false
 SKIP_PACKAGES=false
 SKIP_EXTENSIONS=false
-SKIP_TWEAKS=false
+SKIP_SHORTCUTS=false
 
 log_info() {
     echo -e "${COLOR_BLUE}[INFO]${COLOR_NC} $*"
@@ -99,13 +99,13 @@ atomic_symlink() {
 
     ensure_parent_dir "${dest}"
 
-    # Check if symlink already points to source
+    # Verify if destination is already an identical symlink
     if [[ -L "${dest}" ]] && [[ "$(readlink -f "${dest}")" = "$(readlink -f "${src}")" ]]; then
         log_info "Symlink verified: ${dest} -> ${src}"
         return 0
     fi
 
-    # Non-destructive backup of existing file/symlink/dir
+    # Non-destructive backup of existing file/directory/symlink
     if [[ -e "${dest}" ]] || [[ -L "${dest}" ]]; then
         if [[ "${DRY_RUN}" = true ]]; then
             log_warn "[DRY-RUN] Would backup existing ${dest} to ${BACKUP_DIR}/$(basename "${dest}")"
@@ -119,7 +119,7 @@ atomic_symlink() {
         fi
     fi
 
-    # Create atomic symlink
+    # Atomic symlink creation
     if [[ "${DRY_RUN}" = true ]]; then
         log_success "[DRY-RUN] ln -sf ${src} ${dest}"
     else
@@ -129,13 +129,17 @@ atomic_symlink() {
 }
 
 # ==============================================================================
-# 🦠 ORGANISMS: Discrete Functional Modules
+# 🦠 ORGANISMS: Pipeline Execution Phases
 # ==============================================================================
 
-# 1. Core Native Apps & Arch Utilities
-install_native_packages() {
-    log_info "Verifying core native packages..."
-    local NATIVE_PKGS=(
+# ------------------------------------------------------------------------------
+# Phase A: Core Apps & AUR Packages
+# ------------------------------------------------------------------------------
+phase_a_core_and_aur() {
+    log_info "=== [Phase A] Core Native Apps & AUR Packages ==="
+
+    # 1. Official Repository Packages
+    local OFFICIAL_PKGS=(
         "base-devel"
         "git"
         "curl"
@@ -162,55 +166,48 @@ install_native_packages() {
         "wl-clipboard"
     )
 
-    local MISSING_PKGS=()
-    for pkg in "${NATIVE_PKGS[@]}"; do
+    local MISSING_OFFICIAL=()
+    for pkg in "${OFFICIAL_PKGS[@]}"; do
         if is_native_pkg_installed "${pkg}"; then
             log_skip "${pkg}"
         else
-            MISSING_PKGS+=("${pkg}")
+            MISSING_OFFICIAL+=("${pkg}")
         fi
     done
 
-    if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
-        for pkg in "${MISSING_PKGS[@]}"; do
+    if [[ ${#MISSING_OFFICIAL[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_OFFICIAL[@]}"; do
             log_install "${pkg}"
         done
         if [[ "${DRY_RUN}" = true ]]; then
-            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_PKGS[*]}"
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_OFFICIAL[*]}"
         else
-            sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}"
-            log_success "Native packages installed successfully."
+            sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"
+            log_success "Official packages installed."
         fi
     fi
-}
 
-# 2. AUR Helper (yay)
-ensure_aur_helper() {
-    log_info "Verifying AUR helper (yay)..."
+    # 2. AUR Helper (yay) Verification
     if command -v yay >/dev/null 2>&1; then
         log_skip "yay"
-        return 0
-    fi
-
-    log_install "yay (from AUR git source)"
-    local BUILD_DIR="/tmp/yay_build"
-    if [[ "${DRY_RUN}" = true ]]; then
-        log_info "[DRY-RUN] git clone https://aur.archlinux.org/yay.git ${BUILD_DIR} && cd ${BUILD_DIR} && makepkg -si --noconfirm"
     else
-        rm -rf "${BUILD_DIR}"
-        git clone https://aur.archlinux.org/yay.git "${BUILD_DIR}"
-        (
-            cd "${BUILD_DIR}"
-            makepkg -si --noconfirm
-        )
-        rm -rf "${BUILD_DIR}"
-        log_success "yay installed successfully."
+        log_install "yay (from AUR git source)"
+        local BUILD_DIR="/tmp/yay_build"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] git clone https://aur.archlinux.org/yay.git ${BUILD_DIR} && cd ${BUILD_DIR} && makepkg -si --noconfirm"
+        else
+            rm -rf "${BUILD_DIR}"
+            git clone https://aur.archlinux.org/yay.git "${BUILD_DIR}"
+            (
+                cd "${BUILD_DIR}"
+                makepkg -si --noconfirm
+            )
+            rm -rf "${BUILD_DIR}"
+            log_success "yay installed successfully."
+        fi
     fi
-}
 
-# 3. AUR Packages & Service Activation
-install_aur_packages() {
-    log_info "Verifying AUR packages..."
+    # 3. AUR Packages Installation
     local AUR_PKGS=(
         "ulauncher"
         "google-chrome"
@@ -232,22 +229,20 @@ install_aur_packages() {
         fi
     done
 
-    # Ulauncher User Service
-    log_info "Configuring Ulauncher user service..."
+    # 4. Enable Ulauncher Daemon
+    log_info "Configuring Ulauncher user daemon..."
     if [[ "${DRY_RUN}" = true ]]; then
         log_info "[DRY-RUN] systemctl --user enable --now ulauncher"
     else
-        if systemctl --user is-active ulauncher >/dev/null 2>&1; then
-            log_info "Ulauncher user service is already active."
-        else
-            systemctl --user enable --now ulauncher 2>/dev/null || log_warn "Ulauncher service will activate upon graphical session startup."
-        fi
+        systemctl --user enable --now ulauncher 2>/dev/null || log_warn "Ulauncher daemon will activate upon graphical session login."
     fi
 }
 
-# 4. Fonts Installation & Cache Refresh
-install_and_refresh_fonts() {
-    log_info "Verifying fonts..."
+# ------------------------------------------------------------------------------
+# Phase B: Fonts Installation & Cache Refresh
+# ------------------------------------------------------------------------------
+phase_b_fonts() {
+    log_info "=== [Phase B] Fonts Installation & Cache Refresh ==="
     local FONTS=(
         "ttf-jetbrains-mono-nerd"
         "noto-fonts-emoji"
@@ -282,37 +277,72 @@ install_and_refresh_fonts() {
     fi
 }
 
-# 5. Shell (.zshrc) Normalization & Symlink
-deploy_shell_configuration() {
-    log_info "Deploying shell configurations..."
-    atomic_symlink "${DOTFILES_DIR}/shell/.zshrc" "${HOME}/.zshrc"
-    atomic_symlink "${DOTFILES_DIR}/shell/.bashrc" "${HOME}/.bashrc"
+# ------------------------------------------------------------------------------
+# Phase C: macOS-style Shortcuts on GNOME via gsettings & System Tweaks
+# ------------------------------------------------------------------------------
+phase_c_macos_shortcuts() {
+    if [[ "${SKIP_SHORTCUTS}" = true ]]; then
+        log_info "Skipping macOS shortcuts (--skip-shortcuts active)."
+        return 0
+    fi
+
+    log_info "=== [Phase C] macOS-style Shortcuts & GNOME Performance Tweaks ==="
+
+    if ! command -v gsettings >/dev/null 2>&1; then
+        log_warn "gsettings not found, skipping GNOME shortcut configuration."
+        return 0
+    fi
+
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_info "[DRY-RUN] Configure GNOME shortcuts (Super+Shift+3, Super+Shift+4, Super+Shift+5, Super+Q, Super+H)"
+        log_info "[DRY-RUN] Disable GNOME interface animations"
+        log_info "[DRY-RUN] Mask tracker miner services"
+    else
+        # Super+Shift+3: Fullscreen capture
+        gsettings set org.gnome.shell.keybindings screenshot "['<Super><Shift>3']"
+        # Super+Shift+4: Area/window capture
+        gsettings set org.gnome.shell.keybindings screenshot-window "['<Super><Shift>4']"
+        # Super+Shift+5: Screenshot UI
+        gsettings set org.gnome.shell.keybindings show-screenshot-ui "['<Super><Shift>5']"
+        # Super+Q: Close window
+        gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']"
+        # Super+H: Minimize window
+        gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']"
+
+        # Disable GNOME animations for instantaneous response
+        gsettings set org.gnome.desktop.interface enable-animations false
+
+        # Mask resource-heavy tracker miners
+        systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true
+
+        log_success "macOS-style shortcuts and GNOME system tweaks applied."
+    fi
 }
 
-# 6. Configuration Symlinks
-deploy_config_symlinks() {
-    log_info "Deploying application configuration symlinks..."
+# ------------------------------------------------------------------------------
+# Phase D: Shell Normalization, Symlinks & Extension Restore
+# ------------------------------------------------------------------------------
+phase_d_shell_and_symlinks() {
+    log_info "=== [Phase D] Shell Normalization, Symlinks & Extension Restore ==="
 
-    # Starship
+    # 1. Shell Links
+    atomic_symlink "${DOTFILES_DIR}/shell/.zshrc" "${HOME}/.zshrc"
+    atomic_symlink "${DOTFILES_DIR}/shell/.bashrc" "${HOME}/.bashrc"
+
+    # 2. Config Links
     atomic_symlink "${DOTFILES_DIR}/starship/starship.toml" "${HOME}/.config/starship.toml"
-
-    # Kitty Terminal
     atomic_symlink "${DOTFILES_DIR}/kitty" "${HOME}/.config/kitty"
-
-    # Git
     atomic_symlink "${DOTFILES_DIR}/git/.gitconfig" "${HOME}/.gitconfig"
 
-    # VS Code Configurations
+    # 3. VS Code Configurations
     local VSCODE_USER_DIR="${HOME}/.config/Code/User"
     atomic_symlink "${DOTFILES_DIR}/vscode/settings.json" "${VSCODE_USER_DIR}/settings.json"
     atomic_symlink "${DOTFILES_DIR}/vscode/keybindings.json" "${VSCODE_USER_DIR}/keybindings.json"
     if [[ -e "${DOTFILES_DIR}/vscode/snippets" ]]; then
         atomic_symlink "${DOTFILES_DIR}/vscode/snippets" "${VSCODE_USER_DIR}/snippets"
     fi
-}
 
-# 7. VS Code Extensions Restore
-restore_vscode_extensions() {
+    # 4. VS Code Extensions Restore
     if [[ "${SKIP_EXTENSIONS}" = true ]]; then
         log_info "Skipping VS Code extensions (--skip-extensions active)."
         return 0
@@ -352,36 +382,6 @@ restore_vscode_extensions() {
     log_success "VS Code extension verification completed."
 }
 
-# 8. GNOME System Tweaks
-apply_system_tweaks() {
-    if [[ "${SKIP_TWEAKS}" = true ]]; then
-        log_info "Skipping system tweaks (--skip-tweaks active)."
-        return 0
-    fi
-
-    log_info "Applying GNOME system performance tweaks..."
-
-    # Disable GNOME animations for instantaneous UI response
-    if command -v gsettings >/dev/null 2>&1; then
-        if [[ "${DRY_RUN}" = true ]]; then
-            log_info "[DRY-RUN] gsettings set org.gnome.desktop.interface enable-animations false"
-        else
-            gsettings set org.gnome.desktop.interface enable-animations false
-            log_success "GNOME animations disabled."
-        fi
-    fi
-
-    # Mask resource-heavy tracker miners
-    if command -v systemctl >/dev/null 2>&1; then
-        if [[ "${DRY_RUN}" = true ]]; then
-            log_info "[DRY-RUN] systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service"
-        else
-            systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true
-            log_success "Tracker miners masked."
-        fi
-    fi
-}
-
 # ==============================================================================
 # 📐 TEMPLATES: Pipeline Orchestration
 # ==============================================================================
@@ -400,21 +400,17 @@ run_pipeline() {
     print_banner
 
     if [[ "${SKIP_PACKAGES}" = false ]]; then
-        install_native_packages
-        ensure_aur_helper
-        install_aur_packages
-        install_and_refresh_fonts
+        phase_a_core_and_aur
+        phase_b_fonts
     else
         log_info "Package installation bypassed (--skip-packages active)."
     fi
 
-    deploy_shell_configuration
-    deploy_config_symlinks
-    restore_vscode_extensions
-    apply_system_tweaks
+    phase_c_macos_shortcuts
+    phase_d_shell_and_symlinks
 
     echo -e "\n${COLOR_GREEN}====================================================${COLOR_NC}"
-    echo -e "${COLOR_GREEN}  Pipeline execution finished successfully!         ${COLOR_NC}"
+    echo -e "${COLOR_GREEN}  Pipeline execution completed successfully!        ${COLOR_NC}"
     echo -e "${COLOR_GREEN}====================================================${COLOR_NC}"
     log_info "To apply shell changes in current terminal: source ~/.zshrc"
 }
@@ -432,7 +428,7 @@ Options:
   --dry-run          Simulate pipeline execution without changing the filesystem or packages
   --skip-packages    Skip native pacman, yay, and AUR package installations
   --skip-extensions  Skip VS Code extensions installation
-  --skip-tweaks      Skip GNOME interface and systemd tweaks
+  --skip-shortcuts   Skip GNOME macOS shortcuts and system tweaks
   -h, --help         Display this help message
 HELP_TEXT
 }
@@ -449,8 +445,8 @@ main() {
             --skip-extensions)
                 SKIP_EXTENSIONS=true
                 ;;
-            --skip-tweaks)
-                SKIP_TWEAKS=true
+            --skip-shortcuts)
+                SKIP_SHORTCUTS=true
                 ;;
             -h|--help)
                 print_help

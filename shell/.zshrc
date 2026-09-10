@@ -67,6 +67,7 @@ setopt PUSHD_SILENT
 # ================================
 autoload -Uz bracketed-paste-magic
 zle -N bracketed-paste bracketed-paste-magic
+unset zle_bracketed_paste
 
 # ================================
 # ALIASES
