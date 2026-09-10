@@ -1,298 +1,468 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Dotfiles Automated Setup Script
-# Target: Manjaro GNOME (Arch-based)
-# Developer: parikesitad-pm
+# ARCHITECTURE: Atomic Design Pipeline (Atoms -> Molecules -> Organisms -> Templates -> Pages)
+# PATTERNS: SOLID / DRY / Zero Magic Numbers / Idempotent / Non-Destructive Execution
+# TARGET: Manjaro Linux (GNOME Desktop / Wayland)
+# DEVELOPER: parikesitad-pm
 # ==============================================================================
 
 set -euo pipefail
 
-# -------------------------------
-# Colors & Logging
-# -------------------------------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# ==============================================================================
+# ⚛️ ATOMS: Logging, Configuration Primitives & Environment Constants
+# ==============================================================================
+readonly COLOR_RED='\033[0;31m'
+readonly COLOR_GREEN='\033[0;32m'
+readonly COLOR_YELLOW='\033[1;33m'
+readonly COLOR_BLUE='\033[0;34m'
+readonly COLOR_CYAN='\033[0;36m'
+readonly COLOR_NC='\033[0m'
 
-info() {
-    echo -e "${BLUE}[INFO]${NC} $*"
-}
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly DOTFILES_DIR="${SCRIPT_DIR}"
+readonly TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+readonly BACKUP_DIR="${HOME}/.dotfiles_backup/${TIMESTAMP}"
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $*"
-}
-
-warn() {
-    echo -e "${YELLOW}[WARN]${NC} $*"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $*" >&2
-}
-
-# -------------------------------
-# Environment & Base Paths
-# -------------------------------
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_SUFFIX=".bak.$(date +%Y%m%d_%H%M%S)"
-
+# Flags
 DRY_RUN=false
 SKIP_PACKAGES=false
 SKIP_EXTENSIONS=false
+SKIP_TWEAKS=false
 
-print_help() {
-    cat << HELP_MSG
-Usage: ./setup.sh [OPTIONS]
-
-Options:
-  --dry-run          Simulate actions without modifying files or installing packages
-  --skip-packages    Skip pacman/yay core package installations
-  --skip-extensions  Skip VS Code extensions installation
-  -h, --help         Show this help message
-HELP_MSG
+log_info() {
+    echo -e "${COLOR_BLUE}[INFO]${COLOR_NC} $*"
 }
 
-for arg in "$@"; do
-    case $arg in
-        --dry-run)
-            DRY_RUN=true
-            ;;
-        --skip-packages)
-            SKIP_PACKAGES=true
-            ;;
-        --skip-extensions)
-            SKIP_EXTENSIONS=true
-            ;;
-        -h|--help)
-            print_help
-            exit 0
-            ;;
-        *)
-            warn "Unknown argument: $arg"
-            ;;
-    esac
-done
+log_success() {
+    echo -e "${COLOR_GREEN}[SUCCESS]${COLOR_NC} $*"
+}
 
-echo -e "${CYAN}====================================================${NC}"
-echo -e "${CYAN}  Dotfiles Deployment for Manjaro GNOME (Arch-based)${NC}"
-echo -e "${CYAN}====================================================${NC}"
-info "Dotfiles Source Directory: $DOTFILES_DIR"
-if [ "$DRY_RUN" = true ]; then
-    warn "Running in DRY-RUN mode. No changes will be written."
-fi
+log_warn() {
+    echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC} $*"
+}
 
-# -------------------------------
-# Safe Symlink Helper
-# -------------------------------
-backup_and_symlink() {
+log_error() {
+    echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $*" >&2
+}
+
+log_skip() {
+    echo "[INSTALLED: SKIP] $*"
+}
+
+log_install() {
+    echo "[INSTALLING] $*"
+}
+
+# ==============================================================================
+# 🧬 MOLECULES: System Verification & Safe Idempotent Operations
+# ==============================================================================
+is_native_pkg_installed() {
+    local pkg="$1"
+    pacman -Qi "${pkg}" >/dev/null 2>&1
+}
+
+is_aur_pkg_installed() {
+    local pkg="$1"
+    pacman -Qi "${pkg}" >/dev/null 2>&1 || yay -Qi "${pkg}" >/dev/null 2>&1
+}
+
+is_extension_installed() {
+    local ext="$1"
+    if command -v code >/dev/null 2>&1; then
+        code --list-extensions 2>/dev/null | grep -qx "${ext}"
+    else
+        return 1
+    fi
+}
+
+ensure_parent_dir() {
+    local target_path="$1"
+    local parent_dir
+    parent_dir="$(dirname "${target_path}")"
+    if [[ ! -d "${parent_dir}" ]]; then
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] mkdir -p ${parent_dir}"
+        else
+            mkdir -p "${parent_dir}"
+        fi
+    fi
+}
+
+atomic_symlink() {
     local src="$1"
     local dest="$2"
 
-    if [ ! -e "$src" ]; then
-        error "Source file/dir does not exist: $src"
+    if [[ ! -e "${src}" ]]; then
+        log_error "Source file/dir does not exist: ${src}"
         return 1
     fi
 
-    local dest_dir
-    dest_dir="$(dirname "$dest")"
-    if [ ! -d "$dest_dir" ]; then
-        if [ "$DRY_RUN" = true ]; then
-            info "[DRY-RUN] Would create directory: $dest_dir"
-        else
-            mkdir -p "$dest_dir"
-        fi
-    fi
+    ensure_parent_dir "${dest}"
 
-    if [ -e "$dest" ] || [ -L "$dest" ]; then
-        if [ -L "$dest" ] && [ "$(readlink -f "$dest")" = "$(readlink -f "$src")" ]; then
-            info "Symlink already points to source: $dest -> $src"
-            return 0
-        fi
-
-        local backup="${dest}${BACKUP_SUFFIX}"
-        if [ "$DRY_RUN" = true ]; then
-            warn "[DRY-RUN] Would backup existing $dest to $backup"
-        else
-            warn "Backing up existing $dest to $backup"
-            mv "$dest" "$backup"
-        fi
-    fi
-
-    if [ "$DRY_RUN" = true ]; then
-        success "[DRY-RUN] Would symlink: $dest -> $src"
-    else
-        ln -sfn "$src" "$dest"
-        success "Linked: $dest -> $src"
-    fi
-}
-
-# -------------------------------
-# 1. Package Installation (Pacman/Yay)
-# -------------------------------
-install_core_packages() {
-    if [ "$SKIP_PACKAGES" = true ]; then
-        info "Skipping package installation (--skip-packages active)."
+    # Check if symlink already points to source
+    if [[ -L "${dest}" ]] && [[ "$(readlink -f "${dest}")" = "$(readlink -f "${src}")" ]]; then
+        log_info "Symlink verified: ${dest} -> ${src}"
         return 0
     fi
 
-    info "Checking core packages (kitty, starship, git, curl, zsh)..."
-    local CORE_PKGS=("kitty" "starship" "git" "curl" "zsh")
-
-    if command -v pacman >/dev/null 2>&1; then
-        if [ "$DRY_RUN" = true ]; then
-            info "[DRY-RUN] Would run: sudo pacman -S --needed --noconfirm ${CORE_PKGS[*]}"
+    # Non-destructive backup of existing file/symlink/dir
+    if [[ -e "${dest}" ]] || [[ -L "${dest}" ]]; then
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_warn "[DRY-RUN] Would backup existing ${dest} to ${BACKUP_DIR}/$(basename "${dest}")"
         else
-            info "Running: sudo pacman -S --needed --noconfirm ${CORE_PKGS[*]}"
-            sudo pacman -S --needed --noconfirm "${CORE_PKGS[@]}"
-            success "Core packages installed."
+            mkdir -p "${BACKUP_DIR}"
+            local dest_name
+            dest_name="$(basename "${dest}")"
+            log_warn "Backing up ${dest} -> ${BACKUP_DIR}/${dest_name}"
+            cp -a "${dest}" "${BACKUP_DIR}/${dest_name}"
+            rm -rf "${dest}"
         fi
+    fi
+
+    # Create atomic symlink
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_success "[DRY-RUN] ln -sf ${src} ${dest}"
     else
-        warn "pacman not found. If not on Arch/Manjaro, please install ${CORE_PKGS[*]} manually."
+        ln -sf "${src}" "${dest}"
+        log_success "Linked: ${dest} -> ${src}"
     fi
 }
 
-# -------------------------------
-# 2. Symlink Configurations
-# -------------------------------
-deploy_symlinks() {
-    info "Setting up configuration symlinks..."
+# ==============================================================================
+# 🦠 ORGANISMS: Discrete Functional Modules
+# ==============================================================================
 
-    # 1. Kitty Terminal
-    backup_and_symlink "$DOTFILES_DIR/kitty" "$HOME/.config/kitty"
+# 1. Core Native Apps & Arch Utilities
+install_native_packages() {
+    log_info "Verifying core native packages..."
+    local NATIVE_PKGS=(
+        "base-devel"
+        "git"
+        "curl"
+        "wget"
+        "btop"
+        "fastfetch"
+        "firefox"
+        "discord"
+        "zsh"
+        "zsh-autosuggestions"
+        "zsh-syntax-highlighting"
+        "github-cli"
+        "eza"
+        "zoxide"
+        "gnome-keyring"
+        "libsecret"
+        "seahorse"
+        "kitty"
+        "starship"
+        "bat"
+        "fd"
+        "ripgrep"
+        "fzf"
+        "wl-clipboard"
+    )
 
-    # 2. Starship Prompt
-    backup_and_symlink "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
-
-    # 3. Shell & Git
-    backup_and_symlink "$DOTFILES_DIR/shell/.bashrc" "$HOME/.bashrc"
-    backup_and_symlink "$DOTFILES_DIR/shell/.zshrc" "$HOME/.zshrc"
-    backup_and_symlink "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
-
-    # 4. VS Code Configurations
-    local VSCODE_TARGET_DIRS=("$HOME/.config/Code/User")
-    [ -d "$HOME/.config/Code - OSS/User" ] && VSCODE_TARGET_DIRS+=("$HOME/.config/Code - OSS/User")
-    [ -d "$HOME/.config/VSCodium/User" ] && VSCODE_TARGET_DIRS+=("$HOME/.config/VSCodium/User")
-
-    for target_dir in "${VSCODE_TARGET_DIRS[@]}"; do
-        info "Configuring editor target: $target_dir"
-        backup_and_symlink "$DOTFILES_DIR/vscode/settings.json" "$target_dir/settings.json"
-        backup_and_symlink "$DOTFILES_DIR/vscode/keybindings.json" "$target_dir/keybindings.json"
-        backup_and_symlink "$DOTFILES_DIR/vscode/snippets" "$target_dir/snippets"
+    local MISSING_PKGS=()
+    for pkg in "${NATIVE_PKGS[@]}"; do
+        if is_native_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            MISSING_PKGS+=("${pkg}")
+        fi
     done
+
+    if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_PKGS[@]}"; do
+            log_install "${pkg}"
+        done
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_PKGS[*]}"
+        else
+            sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}"
+            log_success "Native packages installed successfully."
+        fi
+    fi
 }
 
-# -------------------------------
-# 3. VS Code Extensions Restore
-# -------------------------------
+# 2. AUR Helper (yay)
+ensure_aur_helper() {
+    log_info "Verifying AUR helper (yay)..."
+    if command -v yay >/dev/null 2>&1; then
+        log_skip "yay"
+        return 0
+    fi
+
+    log_install "yay (from AUR git source)"
+    local BUILD_DIR="/tmp/yay_build"
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_info "[DRY-RUN] git clone https://aur.archlinux.org/yay.git ${BUILD_DIR} && cd ${BUILD_DIR} && makepkg -si --noconfirm"
+    else
+        rm -rf "${BUILD_DIR}"
+        git clone https://aur.archlinux.org/yay.git "${BUILD_DIR}"
+        (
+            cd "${BUILD_DIR}"
+            makepkg -si --noconfirm
+        )
+        rm -rf "${BUILD_DIR}"
+        log_success "yay installed successfully."
+    fi
+}
+
+# 3. AUR Packages & Service Activation
+install_aur_packages() {
+    log_info "Verifying AUR packages..."
+    local AUR_PKGS=(
+        "ulauncher"
+        "google-chrome"
+        "visual-studio-code-bin"
+        "spotify"
+        "zapzap"
+    )
+
+    for pkg in "${AUR_PKGS[@]}"; do
+        if is_aur_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            log_install "${pkg}"
+            if [[ "${DRY_RUN}" = true ]]; then
+                log_info "[DRY-RUN] yay -S --noconfirm ${pkg}"
+            else
+                yay -S --noconfirm "${pkg}"
+            fi
+        fi
+    done
+
+    # Ulauncher User Service
+    log_info "Configuring Ulauncher user service..."
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_info "[DRY-RUN] systemctl --user enable --now ulauncher"
+    else
+        if systemctl --user is-active ulauncher >/dev/null 2>&1; then
+            log_info "Ulauncher user service is already active."
+        else
+            systemctl --user enable --now ulauncher 2>/dev/null || log_warn "Ulauncher service will activate upon graphical session startup."
+        fi
+    fi
+}
+
+# 4. Fonts Installation & Cache Refresh
+install_and_refresh_fonts() {
+    log_info "Verifying fonts..."
+    local FONTS=(
+        "ttf-jetbrains-mono-nerd"
+        "noto-fonts-emoji"
+    )
+
+    local MISSING_FONTS=()
+    for font_pkg in "${FONTS[@]}"; do
+        if is_native_pkg_installed "${font_pkg}"; then
+            log_skip "${font_pkg}"
+        else
+            MISSING_FONTS+=("${font_pkg}")
+        fi
+    done
+
+    if [[ ${#MISSING_FONTS[@]} -gt 0 ]]; then
+        for font_pkg in "${MISSING_FONTS[@]}"; do
+            log_install "${font_pkg}"
+        done
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_FONTS[*]}"
+        else
+            sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
+        fi
+    fi
+
+    log_info "Refreshing font cache..."
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_info "[DRY-RUN] fc-cache -f"
+    else
+        fc-cache -f
+        log_success "Font cache refreshed."
+    fi
+}
+
+# 5. Shell (.zshrc) Normalization & Symlink
+deploy_shell_configuration() {
+    log_info "Deploying shell configurations..."
+    atomic_symlink "${DOTFILES_DIR}/shell/.zshrc" "${HOME}/.zshrc"
+    atomic_symlink "${DOTFILES_DIR}/shell/.bashrc" "${HOME}/.bashrc"
+}
+
+# 6. Configuration Symlinks
+deploy_config_symlinks() {
+    log_info "Deploying application configuration symlinks..."
+
+    # Starship
+    atomic_symlink "${DOTFILES_DIR}/starship/starship.toml" "${HOME}/.config/starship.toml"
+
+    # Kitty Terminal
+    atomic_symlink "${DOTFILES_DIR}/kitty" "${HOME}/.config/kitty"
+
+    # Git
+    atomic_symlink "${DOTFILES_DIR}/git/.gitconfig" "${HOME}/.gitconfig"
+
+    # VS Code Configurations
+    local VSCODE_USER_DIR="${HOME}/.config/Code/User"
+    atomic_symlink "${DOTFILES_DIR}/vscode/settings.json" "${VSCODE_USER_DIR}/settings.json"
+    atomic_symlink "${DOTFILES_DIR}/vscode/keybindings.json" "${VSCODE_USER_DIR}/keybindings.json"
+    if [[ -e "${DOTFILES_DIR}/vscode/snippets" ]]; then
+        atomic_symlink "${DOTFILES_DIR}/vscode/snippets" "${VSCODE_USER_DIR}/snippets"
+    fi
+}
+
+# 7. VS Code Extensions Restore
 restore_vscode_extensions() {
-    if [ "$SKIP_EXTENSIONS" = true ]; then
-        info "Skipping VS Code extensions installation (--skip-extensions active)."
+    if [[ "${SKIP_EXTENSIONS}" = true ]]; then
+        log_info "Skipping VS Code extensions (--skip-extensions active)."
         return 0
     fi
 
-    local EXT_FILE="$DOTFILES_DIR/vscode/extensions.list"
-    if [ ! -f "$EXT_FILE" ]; then
-        warn "Extension list not found at: $EXT_FILE"
+    local EXT_FILE="${DOTFILES_DIR}/vscode/extensions.list"
+    if [[ ! -f "${EXT_FILE}" ]]; then
+        log_warn "Extension list not found: ${EXT_FILE}"
         return 0
     fi
 
-    local EDITOR_BIN=""
-    if command -v code >/dev/null 2>&1; then
-        EDITOR_BIN="code"
-    elif command -v codium >/dev/null 2>&1; then
-        EDITOR_BIN="codium"
-    elif command -v code-oss >/dev/null 2>&1; then
-        EDITOR_BIN="code-oss"
-    fi
-
-    if [ -z "$EDITOR_BIN" ]; then
-        warn "VS Code binary ('code', 'codium', or 'code-oss') not found. Extensions can be installed later using: ./setup.sh --skip-packages"
+    if ! command -v code >/dev/null 2>&1; then
+        log_warn "VS Code CLI ('code') not found. Extensions can be installed after installing VS Code."
         return 0
     fi
 
-    info "Restoring VS Code extensions using $EDITOR_BIN..."
-    while IFS= read -r ext || [ -n "$ext" ]; do
-        # Ignore comments and empty lines
-        [[ "$ext" =~ ^[[:space:]]*# ]] && continue
-        [ -z "$ext" ] && continue
+    log_info "Verifying VS Code extensions..."
+    local CURRENT_EXTS
+    CURRENT_EXTS="$(code --list-extensions 2>/dev/null || true)"
 
-        if [ "$DRY_RUN" = true ]; then
-            info "[DRY-RUN] Would install extension: $ext"
+    while IFS= read -r ext || [[ -n "${ext}" ]]; do
+        [[ "${ext}" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${ext// }" ]] && continue
+
+        if echo "${CURRENT_EXTS}" | grep -qx "${ext}"; then
+            log_skip "${ext}"
         else
-            echo -e "Installing extension: ${CYAN}$ext${NC}..."
-            "$EDITOR_BIN" --install-extension "$ext" --force || warn "Failed to install $ext"
+            log_install "${ext}"
+            if [[ "${DRY_RUN}" = true ]]; then
+                log_info "[DRY-RUN] code --install-extension ${ext} --force"
+            else
+                code --install-extension "${ext}" --force || log_warn "Failed to install extension: ${ext}"
+            fi
         fi
-    done < "$EXT_FILE"
+    done < "${EXT_FILE}"
 
-    success "VS Code extensions restoration finished."
+    log_success "VS Code extension verification completed."
 }
 
-# -------------------------------
-# 4. Starship Prompt Hook Injection
-# -------------------------------
-ensure_starship_hook() {
-    info "Verifying Starship prompt initialization in shell RC files..."
+# 8. GNOME System Tweaks
+apply_system_tweaks() {
+    if [[ "${SKIP_TWEAKS}" = true ]]; then
+        log_info "Skipping system tweaks (--skip-tweaks active)."
+        return 0
+    fi
 
-    # In Bash
-    local BASHRC="$HOME/.bashrc"
-    if [ -f "$BASHRC" ]; then
-        if ! grep -q 'starship init bash' "$BASHRC"; then
-            if [ "$DRY_RUN" = true ]; then
-                info "[DRY-RUN] Would append Starship init hook to $BASHRC"
-            else
-                info "Injecting Starship init into $BASHRC"
-                cat << 'STARSHIP_BASH' >> "$BASHRC"
+    log_info "Applying GNOME system performance tweaks..."
 
-# Starship Prompt Hook
-eval "$(starship init bash)"
-STARSHIP_BASH
-                success "Starship hook added to $BASHRC"
-            fi
+    # Disable GNOME animations for instantaneous UI response
+    if command -v gsettings >/dev/null 2>&1; then
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] gsettings set org.gnome.desktop.interface enable-animations false"
         else
-            info "Starship hook already present in $BASHRC"
+            gsettings set org.gnome.desktop.interface enable-animations false
+            log_success "GNOME animations disabled."
         fi
     fi
 
-    # In Zsh
-    local ZSHRC="$HOME/.zshrc"
-    if [ -f "$ZSHRC" ]; then
-        if ! grep -q 'starship init zsh' "$ZSHRC"; then
-            if [ "$DRY_RUN" = true ]; then
-                info "[DRY-RUN] Would append Starship init hook to $ZSHRC"
-            else
-                info "Injecting Starship init into $ZSHRC"
-                cat << 'STARSHIP_ZSH' >> "$ZSHRC"
-
-# Starship Prompt Hook
-eval "$(starship init zsh)"
-STARSHIP_ZSH
-                success "Starship hook added to $ZSHRC"
-            fi
+    # Mask resource-heavy tracker miners
+    if command -v systemctl >/dev/null 2>&1; then
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service"
         else
-            info "Starship hook already present in $ZSHRC"
+            systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true
+            log_success "Tracker miners masked."
         fi
     fi
 }
 
-# -------------------------------
-# Main Execution Flow
-# -------------------------------
-main() {
-    install_core_packages
-    deploy_symlinks
-    ensure_starship_hook
+# ==============================================================================
+# 📐 TEMPLATES: Pipeline Orchestration
+# ==============================================================================
+print_banner() {
+    echo -e "${COLOR_CYAN}====================================================${COLOR_NC}"
+    echo -e "${COLOR_CYAN}  Manjaro GNOME Automated Dotfiles Setup Pipeline   ${COLOR_NC}"
+    echo -e "${COLOR_CYAN}====================================================${COLOR_NC}"
+    log_info "Source Directory : ${DOTFILES_DIR}"
+    log_info "Backup Directory : ${BACKUP_DIR}"
+    if [[ "${DRY_RUN}" = true ]]; then
+        log_warn "Execution Mode   : DRY-RUN (No system changes will occur)"
+    fi
+}
+
+run_pipeline() {
+    print_banner
+
+    if [[ "${SKIP_PACKAGES}" = false ]]; then
+        install_native_packages
+        ensure_aur_helper
+        install_aur_packages
+        install_and_refresh_fonts
+    else
+        log_info "Package installation bypassed (--skip-packages active)."
+    fi
+
+    deploy_shell_configuration
+    deploy_config_symlinks
     restore_vscode_extensions
+    apply_system_tweaks
 
-    echo -e "\n${GREEN}====================================================${NC}"
-    echo -e "${GREEN}  Dotfiles deployment completed successfully!       ${NC}"
-    echo -e "${GREEN}====================================================${NC}"
-    info "Next steps on Manjaro GNOME:"
-    echo -e "  1. Switch default shell if needed: ${CYAN}chsh -s \$(which zsh)${NC}"
-    echo -e "  2. Install Oh My Zsh if not present: ${CYAN}sh -c \"\$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\"${NC}"
-    echo -e "  3. Open Kitty and VS Code to verify appearance."
+    echo -e "\n${COLOR_GREEN}====================================================${COLOR_NC}"
+    echo -e "${COLOR_GREEN}  Pipeline execution finished successfully!         ${COLOR_NC}"
+    echo -e "${COLOR_GREEN}====================================================${COLOR_NC}"
+    log_info "To apply shell changes in current terminal: source ~/.zshrc"
+}
+
+# ==============================================================================
+# 📄 PAGES: CLI Entrypoint & Flags
+# ==============================================================================
+print_help() {
+    cat << HELP_TEXT
+Usage: ./setup.sh [OPTIONS]
+
+Pipeline Orchestrator for Manjaro GNOME Dotfiles.
+
+Options:
+  --dry-run          Simulate pipeline execution without changing the filesystem or packages
+  --skip-packages    Skip native pacman, yay, and AUR package installations
+  --skip-extensions  Skip VS Code extensions installation
+  --skip-tweaks      Skip GNOME interface and systemd tweaks
+  -h, --help         Display this help message
+HELP_TEXT
+}
+
+main() {
+    for arg in "$@"; do
+        case "${arg}" in
+            --dry-run)
+                DRY_RUN=true
+                ;;
+            --skip-packages)
+                SKIP_PACKAGES=true
+                ;;
+            --skip-extensions)
+                SKIP_EXTENSIONS=true
+                ;;
+            --skip-tweaks)
+                SKIP_TWEAKS=true
+                ;;
+            -h|--help)
+                print_help
+                exit 0
+                ;;
+            *)
+                log_warn "Unrecognized option: ${arg}"
+                ;;
+        esac
+    done
+
+    run_pipeline
 }
 
 main "$@"

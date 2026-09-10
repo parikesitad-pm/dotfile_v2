@@ -1,8 +1,9 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
 # ==============================================================================
-# GUNDAM GLASS XFCE - STARSHIP PROMPT CONFIGURATION
+# GUNDAM GLASS GNOME - STARSHIP PROMPT CONFIGURATION
 # Theme: Gundam 00 (Celestial Being / Trans-AM GN Particles)
+# Platform: Manjaro Linux GNOME (Arch-based)
 # Developer: parikesitad-pm
 # ==============================================================================
 
@@ -32,9 +33,10 @@ disabled = false
 style = "bg:#C0392B fg:#FFFFFF"
 
 [os.symbols]
+Manjaro = " "
+Arch = " "
 Fedora = " "
 Ubuntu = " "
-Arch = " "
 Macos = " "
 Windows = "󰍲 "
 Linux = " "

@@ -1,7 +1,8 @@
 # ==============================================================================
-# GUNDAM GLASS XFCE - ZSH CONFIGURATION (.zshrc)
+# GUNDAM GLASS GNOME - ZSH CONFIGURATION (.zshrc)
 # Developer: parikesitad-pm (Project Analyst, QA Tester & Full-Stack Developer)
-# Optimized for: Linux Mint XFCE | ReactJS & Ruby on Rails Developer Workflow
+# Optimized for: Manjaro Linux (GNOME Desktop / Wayland)
+# Tech Stack: React/TS, Ruby on Rails, Laravel/PHP
 # ==============================================================================
 
 # ================================
@@ -21,6 +22,7 @@ plugins=(
   git
   sudo
   npm
+  archlinux
   zsh-autosuggestions
   zsh-completions
   zsh-syntax-highlighting
@@ -28,6 +30,12 @@ plugins=(
 )
 
 [ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
+
+# ==============================================================================
+# ARCH-NATIVE PLUGINS (CONDITIONAL SOURCE)
+# ==============================================================================
+[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # ================================
 # MAN PAGE COLORS
@@ -55,18 +63,28 @@ setopt PUSHD_IGNORE_DUPS
 setopt PUSHD_SILENT
 
 # ================================
+# BRACKETED PASTE HANDLING
+# ================================
+autoload -Uz bracketed-paste-magic
+zle -N bracketed-paste bracketed-paste-magic
+
+# ================================
 # ALIASES
 # ================================
 
-# File & Navigation
+# File & Navigation (Eza Modern Replacements)
 alias ls="eza --icons"
-alias ll="eza --icons -lah"
+alias ll="eza -la --icons"
 alias la="eza --icons -a"
-alias tree="eza --icons --tree"
+alias tree="eza --tree --icons"
 alias cd="z"
 
-# File View & Search (Fix Ubuntu/Debian Binary Name)
-alias cat="batcat"
+# File View & Search (Arch / Manjaro Native Binaries)
+if command -v bat &>/dev/null; then
+  alias cat="bat"
+elif command -v batcat &>/dev/null; then
+  alias cat="batcat"
+fi
 alias find="fd"
 alias grep="rg"
 
@@ -74,16 +92,53 @@ alias grep="rg"
 alias c="code"
 alias .c="code ."
 
-# System Shortcuts (Perbaikan Linux Mint XFCE)
-alias update="sudo apt update && sudo apt upgrade -y"
-alias upgrade="sudo apt update && sudo apt upgrade -y"
-alias install="sudo apt install -y"
-alias remove="sudo apt remove -y"
-alias autoremove="sudo apt autoremove -y"
+# ================================
+# SYSTEM SHORTCUTS (MANJARO & GNOME)
+# ================================
+
+# Pacman Package Management
+alias update="sudo pacman -Syu"
+alias upgrade="sudo pacman -Syu"
+alias install="sudo pacman -S"
+alias remove="sudo pacman -Rns"
+alias search="pacman -Ss"
+
+# Pamac & AUR (Yay) Helpers
+alias pupdate="pamac update"
+alias pinstall="pamac install"
+alias yupdate="yay -Syu"
+alias yinstall="yay -S"
+alias ysearch="yay -Ss"
+
+# Safe Clean Orphan Packages (Autoremove)
+pacclean() {
+  local orphans
+  orphans=($(pacman -Qtdq 2>/dev/null))
+  if [ ${#orphans[@]} -gt 0 ]; then
+    sudo pacman -Rns "${orphans[@]}"
+  else
+    echo "✨ No orphaned packages found."
+  fi
+}
+alias autoremove="pacclean"
+
+# Power & GNOME Session Controls
 alias ribut="sudo reboot"
 alias matikan="sudo poweroff"
 alias shutdown="sudo poweroff"
-alias logout="xfce4-session-logout --logout"
+alias logout="gnome-session-quit --logout --no-prompt"
+alias lock="loginctl lock-session"
+alias gnome-ver="gnome-shell --version"
+
+# Clipboard Support (Wayland / X11) & Utilities
+if command -v wl-copy &>/dev/null; then
+  alias copy="wl-copy"
+  alias paste="wl-paste"
+elif command -v xclip &>/dev/null; then
+  alias copy="xclip -selection clipboard"
+  alias paste="xclip -selection clipboard -o"
+fi
+alias open="xdg-open"
 
 # Safety
 alias rm="rm -i"
@@ -137,7 +192,13 @@ alias dev="cd project"
 # ================================
 # FZF & FZF-TAB
 # ================================
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# Arch / Manjaro system-wide package or git clone fallback
+if [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+elif [ -d /usr/share/fzf ]; then
+  [ -f /usr/share/fzf/key-bindings.zsh ] && source /usr/share/fzf/key-bindings.zsh
+  [ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
+fi
 
 zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --color=always $realpath'
@@ -146,8 +207,8 @@ zstyle ':fzf-tab:*' switch-group ',' '.'
 # ================================
 # TOOL HOOKS & RUNTIMES
 # ================================
-command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+eval "$(starship init zsh)"
+eval "$(zoxide init zsh)"
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
 

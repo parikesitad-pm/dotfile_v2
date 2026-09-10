@@ -4,7 +4,7 @@
   // ========================
   // 🎨 UI
   // ========================
-  "workbench.colorTheme": "Tokyo Night Dark",
+  "workbench.colorTheme": "Solarized Dark",
   "workbench.sideBar.location": "right",
   "workbench.iconTheme": "material-icon-theme",
 
