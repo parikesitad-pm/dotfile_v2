@@ -1,0 +1,402 @@
+{
+  "settingsSync.ignoredSettings": [],
+
+  // ========================
+  // 🎨 UI
+  // ========================
+  "workbench.colorTheme": "Tokyo Night Dark",
+  "workbench.sideBar.location": "right",
+  "workbench.iconTheme": "material-icon-theme",
+
+  // ========================
+  // ✍️ EDITOR
+  // ========================
+  "editor.fontFamily": "'Fira Code', monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 12,
+  "editor.lineHeight": 1.7,
+  "editor.letterSpacing": 0.5,
+  "editor.fontWeight": "normal",
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "editor.cursorBlinking": "expand",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.smoothScrolling": true,
+  "editor.mouseWheelZoom": true,
+  "editor.minimap.enabled": false,
+  "editor.semanticHighlighting.enabled": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
+
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // ========================
+  // 💻 TERMINAL
+  // ========================
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font Mono, monospace",
+  "terminal.integrated.fontSize": 12,
+  "terminal.integrated.lineHeight": 1.2,
+  "terminal.integrated.letterSpacing": 0.5,
+  "terminal.integrated.gpuAcceleration": "on",
+
+  // ========================
+  // 📁 FILE / SEARCH
+  // ========================
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/vendor": true
+  },
+
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/storage/framework": true,
+    "**/public/build": true,
+    "**/tmp": true,
+    "**/log": true
+  },
+
+  // ========================
+  // 🔧 GIT
+  // ========================
+  "git.openRepositoryInParentFolders": "never",
+
+  // ========================
+  // 🌈 TERMINAL TRANSPARENT
+  // ========================
+  "workbench.colorCustomizations": {
+    "terminal.background": "#00000000"
+  },
+
+  // ========================
+  // 🧹 PRETTIER
+  // ========================
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "prettier.trailingComma": "es5",
+  "prettier.arrowParens": "always",
+  "prettier.endOfLine": "lf",
+
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // ========================
+  // ⚛️ ESLINT + TS
+  // ========================
+  "js/ts.tsdk": "node_modules/typescript/lib",
+
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  "js/ts.inlayHints.parameterNames.enabled": "all",
+  "js/ts.inlayHints.variableTypes.enabled": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.inlayHints.enumMemberValues.enabled": true,
+  "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
+
+  // ========================
+  // 🐘 PHP / LARAVEL
+  // ========================
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+
+  "intelephense.environment.phpVersion": "8.3.0",
+  "intelephense.format.enable": true,
+  "intelephense.files.maxSize": 5000000,
+
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/storage/**",
+    "**/vendor/**/Tests/**",
+    "**/vendor/**/tests/**"
+  ],
+
+  "intelephense.stubs": [
+    "apache",
+    "bcmath",
+    "bz2",
+    "calendar",
+    "com_dotnet",
+    "Core",
+    "ctype",
+    "curl",
+    "date",
+    "dba",
+    "dom",
+    "enchant",
+    "exif",
+    "FFI",
+    "fileinfo",
+    "filter",
+    "fpm",
+    "ftp",
+    "gd",
+    "gettext",
+    "gmp",
+    "hash",
+    "iconv",
+    "imap",
+    "intl",
+    "json",
+    "ldap",
+    "libxml",
+    "mbstring",
+    "meta",
+    "mysqli",
+    "oci8",
+    "odbc",
+    "openssl",
+    "pcntl",
+    "pcre",
+    "PDO",
+    "pdo_ibm",
+    "pdo_mysql",
+    "pdo_pgsql",
+    "pdo_sqlite",
+    "pgsql",
+    "Phar",
+    "posix",
+    "pspell",
+    "random",
+    "readline",
+    "Reflection",
+    "session",
+    "shmop",
+    "SimpleXML",
+    "snmp",
+    "soap",
+    "sockets",
+    "sodium",
+    "SPL",
+    "sqlite3",
+    "standard",
+    "superglobals",
+    "sysvmsg",
+    "sysvsem",
+    "sysvshm",
+    "tidy",
+    "tokenizer",
+    "xml",
+    "xmlreader",
+    "xmlrpc",
+    "xmlwriter",
+    "xsl",
+    "Zend OPcache",
+    "zip",
+    "zlib"
+  ],
+
+  // ========================
+  // 🧩 BLADE / LIVEWIRE
+  // ========================
+  "[blade]": {
+    "editor.defaultFormatter": "shufo.vscode-blade-formatter",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+
+  "bladeFormatter.format.enabled": true,
+  "bladeFormatter.format.sortTailwindcssClasses": true,
+  "bladeFormatter.format.wrapAttributes": "auto",
+  "bladeFormatter.format.wrapLineLength": 120,
+  "bladeFormatter.format.indentSize": 2,
+  "bladeFormatter.format.useTabs": false,
+
+  "emmet.includeLanguages": {
+    "blade": "html"
+  },
+
+  // ========================
+  // 🎨 TAILWIND CSS
+  // ========================
+  "tailwindCSS.includeLanguages": {
+    "blade": "html",
+    "php": "html"
+  },
+
+  "tailwindCSS.experimental.classRegex": [
+    ["@class\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["class\\s*=>\\s*[\"'`]([^\"'`]*)[\"'`]", "([^\"'`]*)"]
+  ],
+
+  // ========================
+  // 🔐 ENV
+  // ========================
+  "dotenv.enableAutocloaking": false,
+
+  "[dotenv]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": false
+  },
+
+  // ========================
+  // 🛤️ RUBY / RAILS
+  // ========================
+  "[ruby]": {
+    "editor.defaultFormatter": "Shopify.ruby-lsp",
+    "editor.formatOnSave": true
+  },
+
+  "[erb]": {
+    "editor.defaultFormatter": "aliariff.vscode-erb-beautify",
+    "editor.formatOnSave": true
+  },
+
+  "rubyLsp.formatter": "rubocop",
+  "erb-formatter.htmlFormatter": "prettier",
+
+  // ========================
+  // 🗄️ DATABASE / SQL
+  // ========================
+  "[sql]": {
+    "editor.defaultFormatter": "mtxr.sqltools",
+    "editor.formatOnSave": false
+  },
+
+  // ========================
+  // 🎨 TOKEN COLORS
+  // ========================
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": [
+          "comment",
+          "keyword",
+          "storage.type",
+          "storage.modifier",
+          "entity.name.type.class",
+          "support.class.builtin",
+          "keyword.control",
+          "constant.language",
+          "entity.name.method"
+        ],
+        "settings": {
+          "fontStyle": "italic",
+          "foreground": "#ff79c6"
+        }
+      },
+      {
+        "scope": [
+          "invalid",
+          "keyword.operator",
+          "constant.numeric.css",
+          "keyword.other.unit.px.css",
+          "constant.numeric.decimal.js",
+          "constant.numeric.json"
+        ],
+        "settings": {
+          "fontStyle": ""
+        }
+      },
+      {
+        "scope": [
+          "entity.name.tag.jsx",
+          "support.class.component",
+          "entity.name.type.js"
+        ],
+        "settings": {
+          "foreground": "#7aa2f7",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": [
+          "entity.other.attribute-name.jsx"
+        ],
+        "settings": {
+          "foreground": "#9ece6a",
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": [
+          "string.quoted.double.js",
+          "string.quoted.single.js"
+        ],
+        "settings": {
+          "foreground": "#e0af68"
+        }
+      },
+      {
+        "scope": [
+          "constant.numeric"
+        ],
+        "settings": {
+          "foreground": "#ff9e64",
+          "fontStyle": "bold"
+        }
+      }
+    ]
+  },
+
+  // ========================
+  // 🔒 SECURITY / TOOLS
+  // ========================
+  "security.workspace.trust.untrustedFiles": "open",
+  "claudeCode.preferredLocation": "panel"
+}

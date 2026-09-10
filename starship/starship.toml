@@ -1,0 +1,105 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+# ==============================================================================
+# GUNDAM GLASS XFCE - STARSHIP PROMPT CONFIGURATION
+# Theme: Gundam 00 (Celestial Being / Trans-AM GN Particles)
+# Developer: parikesitad-pm
+# ==============================================================================
+
+format = """
+[](#C0392B)\
+$os\
+$username\
+[](fg:#C0392B bg:#E74C3C)\
+$directory\
+[](fg:#E74C3C bg:#8E2A20)\
+$git_branch\
+$git_status\
+[](fg:#8E2A20 bg:#3C1F1B)\
+$nodejs\
+$ruby\
+$php\
+$golang\
+$rust\
+[](fg:#3C1F1B bg:#1E1E2E)\
+$time\
+[](fg:#1E1E2E)
+$character
+"""
+
+[os]
+disabled = false
+style = "bg:#C0392B fg:#FFFFFF"
+
+[os.symbols]
+Fedora = " "
+Ubuntu = " "
+Arch = " "
+Macos = " "
+Windows = "󰍲 "
+Linux = " "
+Mint = "󰣭 "
+
+[username]
+show_always = true
+style_user = "bg:#C0392B fg:#FFFFFF bold"
+style_root = "bg:#C0392B fg:#FFFFFF bold"
+format = "[ $user ]($style)"
+
+[directory]
+style = "bg:#E74C3C fg:#FFFFFF"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󱔗 "
+"Downloads" = " "
+"Pictures" = " "
+"Music" = " "
+"Desktop" = " "
+
+[git_branch]
+symbol = " "
+style = "bg:#8E2A20 fg:#FFFFFF"
+format = "[ $symbol$branch ]($style)"
+
+[git_status]
+style = "bg:#8E2A20 fg:#FFFFFF"
+format = "[$all_status$ahead_behind ]($style)"
+
+[nodejs]
+symbol = " "
+style = "bg:#3C1F1B fg:#FFFFFF"
+format = "[ $symbol$version ]($style)"
+
+[ruby]
+symbol = " "
+style = "bg:#3C1F1B fg:#FFFFFF"
+format = "[ $symbol$version ]($style)"
+
+[php]
+symbol = " "
+style = "bg:#3C1F1B fg:#FFFFFF"
+format = "[ $symbol$version ]($style)"
+
+[golang]
+symbol = " "
+style = "bg:#3C1F1B fg:#FFFFFF"
+format = "[ $symbol$version ]($style)"
+
+[rust]
+symbol = " "
+style = "bg:#3C1F1B fg:#FFFFFF"
+format = "[ $symbol$version ]($style)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bg:#1E1E2E fg:#FFFFFF"
+format = "[  $time ]($style)"
+
+[character]
+success_symbol = "[❯](bold #E74C3C)"
+error_symbol = "[❯](bold #FF5555)"
+vimcmd_symbol = "[❮](bold #C0392B)"
