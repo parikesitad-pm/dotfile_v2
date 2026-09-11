@@ -32,6 +32,7 @@ readonly GLYPH_BACKUP='󰁯'
 readonly GLYPH_INFO='󰋽'
 readonly GLYPH_WARN=''
 readonly GLYPH_PACKAGE=''
+readonly GLYPH_DEV=' '
 readonly GLYPH_FONT=''
 readonly GLYPH_KEYBOARD='󰌌'
 readonly GLYPH_SPARKLE='✨'
@@ -44,6 +45,7 @@ readonly BACKUP_DIR="${HOME}/.dotfiles_backup/${TIMESTAMP}"
 # Flags
 DRY_RUN=false
 SKIP_PACKAGES=false
+SKIP_DEV=false
 SKIP_EXTENSIONS=false
 SKIP_SHORTCUTS=false
 
@@ -330,10 +332,140 @@ phase_a_core_and_aur() {
 }
 
 # ------------------------------------------------------------------------------
-# Phase B: Fonts Installation & Cache Refresh
+# Phase B: Developer Stacks & Runtimes (React/TS, Laravel, Rails, DBs)
 # ------------------------------------------------------------------------------
-phase_b_fonts() {
-    log_header "${GLYPH_FONT}  Phase B: Fonts Installation & Cache Refresh"
+phase_b_dev_runtimes() {
+    if [[ "${SKIP_DEV}" = true ]]; then
+        log_info "Developer stacks installation bypassed (--skip-dev active)."
+        return 0
+    fi
+
+    log_header "${GLYPH_DEV} Phase B: Developer Stacks (React/TS, Laravel, Rails)"
+
+    # 1. React / TypeScript & Node.js Package Managers
+    local JS_TOOLS=("yarn" "pnpm")
+    local MISSING_JS_TOOLS=()
+    for pkg in "${JS_TOOLS[@]}"; do
+        if is_native_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            MISSING_JS_TOOLS+=("${pkg}")
+        fi
+    done
+
+    if [[ ${#MISSING_JS_TOOLS[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_JS_TOOLS[@]}"; do
+            log_install "${pkg}"
+        done
+        spin_task "Installing JS package managers (yarn, pnpm)" sudo pacman -S --needed --noconfirm "${MISSING_JS_TOOLS[@]}"
+    fi
+
+    # NVM (Node Version Manager) Setup
+    if [[ -s "${HOME}/.nvm/nvm.sh" ]]; then
+        log_skip "nvm (Node Version Manager)"
+    else
+        log_install "nvm (Node Version Manager)"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
+        else
+            spin_task "Installing NVM from official script" bash -c "curl -so- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
+        fi
+    fi
+
+    # 2. PHP & Laravel Prerequisites
+    local LARAVEL_PKGS=(
+        "php"
+        "php-fpm"
+        "php-gd"
+        "php-intl"
+        "php-sodium"
+        "php-sqlite"
+        "php-pgsql"
+        "composer"
+        "sqlite"
+    )
+    local MISSING_LARA_PKGS=()
+    for pkg in "${LARAVEL_PKGS[@]}"; do
+        if is_native_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            MISSING_LARA_PKGS+=("${pkg}")
+        fi
+    done
+
+    if [[ ${#MISSING_LARA_PKGS[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_LARA_PKGS[@]}"; do
+            log_install "${pkg}"
+        done
+        spin_task "Installing PHP & Laravel toolchain" sudo pacman -S --needed --noconfirm "${MISSING_LARA_PKGS[@]}"
+    fi
+
+    # 3. Ruby on Rails Prerequisites
+    local RAILS_BUILD_DEPS=(
+        "libyaml"
+        "libffi"
+        "openssl"
+        "zlib"
+        "readline"
+        "gdbm"
+    )
+    local MISSING_RAILS_DEPS=()
+    for pkg in "${RAILS_BUILD_DEPS[@]}"; do
+        if is_native_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            MISSING_RAILS_DEPS+=("${pkg}")
+        fi
+    done
+
+    if [[ ${#MISSING_RAILS_DEPS[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_RAILS_DEPS[@]}"; do
+            log_install "${pkg}"
+        done
+        spin_task "Installing Ruby compilation dependencies" sudo pacman -S --needed --noconfirm "${MISSING_RAILS_DEPS[@]}"
+    fi
+
+    # Ruby Version Managers (rbenv, ruby-build)
+    local RUBY_MANAGERS=("rbenv" "ruby-build")
+    for mgr in "${RUBY_MANAGERS[@]}"; do
+        if is_aur_pkg_installed "${mgr}" || [[ -d "${HOME}/.rbenv" ]]; then
+            log_skip "${mgr}"
+        else
+            log_install "${mgr}"
+            spin_task "Installing ${mgr} from AUR" yay -S --needed --noconfirm "${mgr}"
+        fi
+    done
+
+    # 4. Local Development Databases & Caches
+    local DB_SERVICES=(
+        "postgresql"
+        "mariadb"
+        "redis"
+    )
+    local MISSING_DB_SERVICES=()
+    for pkg in "${DB_SERVICES[@]}"; do
+        if is_native_pkg_installed "${pkg}"; then
+            log_skip "${pkg}"
+        else
+            MISSING_DB_SERVICES+=("${pkg}")
+        fi
+    done
+
+    if [[ ${#MISSING_DB_SERVICES[@]} -gt 0 ]]; then
+        for pkg in "${MISSING_DB_SERVICES[@]}"; do
+            log_install "${pkg}"
+        done
+        spin_task "Installing databases & cache backends" sudo pacman -S --needed --noconfirm "${MISSING_DB_SERVICES[@]}"
+    fi
+
+    log_footer
+}
+
+# ------------------------------------------------------------------------------
+# Phase C: Fonts Installation & Cache Refresh
+# ------------------------------------------------------------------------------
+phase_c_fonts() {
+    log_header "${GLYPH_FONT}  Phase C: Fonts Installation & Cache Refresh"
 
     local FONTS=(
         "ttf-jetbrains-mono-nerd"
@@ -362,15 +494,15 @@ phase_b_fonts() {
 }
 
 # ------------------------------------------------------------------------------
-# Phase C: macOS-style Shortcuts on GNOME via gsettings & System Tweaks
+# Phase D: macOS-style Shortcuts on GNOME via gsettings & System Tweaks
 # ------------------------------------------------------------------------------
-phase_c_macos_shortcuts() {
+phase_d_macos_shortcuts() {
     if [[ "${SKIP_SHORTCUTS}" = true ]]; then
         log_info "Skipping macOS shortcuts (--skip-shortcuts active)."
         return 0
     fi
 
-    log_header "${GLYPH_KEYBOARD}  Phase C: macOS Shortcuts & GNOME Performance"
+    log_header "${GLYPH_KEYBOARD}  Phase D: macOS Shortcuts & GNOME Performance"
 
     if ! command -v gsettings >/dev/null 2>&1; then
         log_warn "gsettings not found, skipping GNOME shortcut configuration."
@@ -403,10 +535,10 @@ phase_c_macos_shortcuts() {
 }
 
 # ------------------------------------------------------------------------------
-# Phase D: Shell Normalization, Symlinks & Extension Restore
+# Phase E: Shell Normalization, Symlinks & Extension Restore
 # ------------------------------------------------------------------------------
-phase_d_shell_and_symlinks() {
-    log_header "${GLYPH_LINK}  Phase D: Shell Normalization & Application Symlinks"
+phase_e_shell_and_symlinks() {
+    log_header "${GLYPH_LINK}  Phase E: Shell Normalization & Application Symlinks"
 
     # 1. Shell Links
     atomic_symlink "${DOTFILES_DIR}/shell/.zshrc" "${HOME}/.zshrc"
@@ -473,15 +605,16 @@ run_pipeline() {
 
     if [[ "${SKIP_PACKAGES}" = false ]]; then
         phase_a_core_and_aur
-        phase_b_fonts
+        phase_b_dev_runtimes
+        phase_c_fonts
     else
-        log_header "${GLYPH_PACKAGE}  Phase A & B: Packages (Bypassed)"
-        log_info "Package installation bypassed (--skip-packages active)."
+        log_header "${GLYPH_PACKAGE}  Packages & Runtimes (Bypassed)"
+        log_info "Package and runtime installation bypassed (--skip-packages active)."
         log_footer
     fi
 
-    phase_c_macos_shortcuts
-    phase_d_shell_and_symlinks
+    phase_d_macos_shortcuts
+    phase_e_shell_and_symlinks
 
     echo -e "\n${COLOR_GREEN}╭─────────────────────────────────────────────────────────────╮${COLOR_NC}"
     echo -e "${COLOR_GREEN}│  ${GLYPH_SPARKLE} Pipeline execution completed successfully!              ${COLOR_GREEN}│${COLOR_NC}"
@@ -501,7 +634,8 @@ Animated Idempotent Setup Pipeline for Manjaro GNOME Dotfiles.
 
 Options:
   --dry-run          Simulate pipeline execution without changing the filesystem or packages
-  --skip-packages    Skip native pacman, yay, and AUR package installations
+  --skip-packages    Skip all package installations (Core, AUR, Dev runtimes, Fonts)
+  --skip-dev         Skip only developer stacks (Node/React, Laravel, Rails, DBs)
   --skip-extensions  Skip VS Code extensions installation
   --skip-shortcuts   Skip GNOME macOS shortcuts and system tweaks
   -h, --help         Display this help message
@@ -516,6 +650,9 @@ main() {
                 ;;
             --skip-packages)
                 SKIP_PACKAGES=true
+                ;;
+            --skip-dev)
+                SKIP_DEV=true
                 ;;
             --skip-extensions)
                 SKIP_EXTENSIONS=true

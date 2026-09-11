@@ -116,21 +116,26 @@ Jalankan script untuk menginstal paket, membuat symlink, mengatur pintasan macOS
 
 ## ⚙️ Arsitektur Pipeline Script (`setup.sh`)
 
-Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang dibagi ke dalam 4 fase eksekusi:
+Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang dibagi ke dalam 5 fase eksekusi:
 
 1. **Phase A: Core Native Apps & AUR Packages**
    - Memverifikasi paket resmi melalui `pacman -Qi`: `base-devel`, `git`, `curl`, `wget`, `btop`, `fastfetch`, `firefox`, `discord`, `zsh`, `zsh-autosuggestions`, `zsh-syntax-highlighting`, `github-cli`, `eza`, `zoxide`, `gnome-keyring`, `libsecret`, `seahorse`, `kitty`, `starship`, `bat`, `fd`, `ripgrep`, `fzf`, `wl-clipboard`.
    - Memverifikasi AUR helper (`yay`), otomatis meng-clone dan membangun dari AUR jika belum ada.
    - Memverifikasi paket AUR: `ulauncher`, `google-chrome`, `visual-studio-code-bin`, `spotify`.
    - Mengaktifkan daemon service Ulauncher (`systemctl --user enable --now ulauncher`).
-2. **Phase B: Fonts Installation & Cache Refresh**
+2. **Phase B: Developer Stacks & Runtimes (React/TS, Laravel, Rails, DBs)**
+   - **React / TS & Node.js**: Memasang NVM (`~/.nvm`), package manager modern `yarn` dan `pnpm`.
+   - **PHP & Laravel**: Memasang `php`, `php-fpm`, `php-gd`, `php-intl`, `php-sodium`, `php-sqlite`, `php-pgsql`, `composer`, dan `sqlite`.
+   - **Ruby on Rails**: Memasang dependensi kompilasi (`libyaml`, `libffi`, `openssl`, `zlib`, `readline`, `gdbm`) serta version manager `rbenv` dan `ruby-build`.
+   - **Databases & Cache**: Memasang backend database lokal `postgresql`, `mariadb`, dan `redis`.
+3. **Phase C: Fonts Installation & Cache Refresh**
    - Memverifikasi dan memasang `ttf-jetbrains-mono-nerd` dan `noto-fonts-emoji`.
    - Memperbarui cache font sistem via `fc-cache -f`.
-3. **Phase C: macOS-style Shortcuts & GNOME Performance Tweaks**
+4. **Phase D: macOS-style Shortcuts & GNOME Performance Tweaks**
    - Menerapkan pintasan tangkapan layar dan window management via `gsettings`.
    - Menonaktifkan animasi antarmuka GNOME untuk respon instan.
    - Me-mask service tracker miner yang boros CPU/RAM.
-4. **Phase D: Shell Normalization, Symlinks & Extension Restore**
+5. **Phase E: Shell Normalization, Symlinks & Extension Restore**
    - Melakukan pencadangan non-destruktif ke `~/.dotfiles_backup/<timestamp>`.
    - Menautkan `shell/.zshrc`, `shell/.bashrc`, `starship/starship.toml`, `kitty/`, `git/.gitconfig`, dan konfigurasi VS Code.
    - Memasang ekstensi VS Code dari `vscode/extensions.list` dengan pengecekan agar tidak mengulang instalasi yang sudah ada.
@@ -138,8 +143,11 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
 ### Flag Modular yang Tersedia
 
 ```bash
-# Lewati instalasi paket Pacman dan AUR (hanya perbarui symlink & konfigurasi)
+# Lewati instalasi paket apa pun (Core, Dev, Fonts)
 ./setup.sh --skip-packages
+
+# Lewati instalasi stack developer (Node, Laravel, Rails, DBs)
+./setup.sh --skip-dev
 
 # Lewati instalasi ekstensi VS Code
 ./setup.sh --skip-extensions
