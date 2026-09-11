@@ -161,12 +161,12 @@ spin_task() {
     while kill -0 "${task_pid}" 2>/dev/null || [[ ${i} -lt ${min_frames} ]]; do
         local frame="${spin_chars[i % 10]}"
         printf "\r  \033[1;36m%s\033[0m %s... " "${frame}" "${message}"
-        ((i++))
+        i=$(( i + 1 ))
         sleep 0.06
     done
 
-    wait "${task_pid}"
-    local exit_code=$?
+    local exit_code=0
+    wait "${task_pid}" 2>/dev/null || exit_code=$?
     tput cnorm 2>/dev/null || true # Restore cursor
 
     if [[ ${exit_code} -eq 0 ]]; then
