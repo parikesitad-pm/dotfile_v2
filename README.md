@@ -129,7 +129,7 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
    - **Ruby on Rails**: Memasang dependensi kompilasi (`libyaml`, `libffi`, `openssl`, `zlib`, `readline`, `gdbm`) serta version manager `rbenv` dan `ruby-build`.
    - **Databases & Cache**: Memasang backend database lokal `postgresql`, `mariadb`, dan `redis`.
 3. **Phase C: Fonts Installation & Cache Refresh**
-   - Memverifikasi dan memasang `ttf-jetbrains-mono-nerd` dan `noto-fonts-emoji`.
+   - Memverifikasi dan memasang paket font lengkap: `ttf-jetbrains-mono-nerd`, `ttf-firacode-nerd`, `ttf-fira-code`, `ttf-jetbrains-mono`, `ttf-nerd-fonts-symbols`, dan `noto-fonts-emoji`.
    - Memperbarui cache font sistem via `fc-cache -f`.
 4. **Phase D: macOS-style Shortcuts & GNOME Performance Tweaks**
    - Menerapkan pintasan tangkapan layar dan window management via `gsettings`.
@@ -143,6 +143,12 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
 ### Flag Modular yang Tersedia
 
 ```bash
+# Simulasi dry-run tanpa mengubah sistem
+./setup.sh --dry-run
+
+# Mode cepat tanpa jeda visual lazyload
+./setup.sh --fast
+
 # Lewati instalasi paket apa pun (Core, Dev, Fonts)
 ./setup.sh --skip-packages
 

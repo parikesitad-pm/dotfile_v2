@@ -44,6 +44,8 @@ readonly BACKUP_DIR="${HOME}/.dotfiles_backup/${TIMESTAMP}"
 
 # Flags
 DRY_RUN=false
+FAST_MODE=false
+PACE_DELAY=0.025
 SKIP_PACKAGES=false
 SKIP_DEV=false
 SKIP_EXTENSIONS=false
@@ -52,53 +54,74 @@ SKIP_SHORTCUTS=false
 # Cursor safety cleanup
 trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
 
+# ==============================================================================
+# ⏱️ PACING ENGINE: Smooth "Lazy-load" Staggered Output
+# ==============================================================================
+lazy_pace() {
+    local delay="${1:-${PACE_DELAY}}"
+    if [[ "${FAST_MODE}" = false && -t 1 ]]; then
+        sleep "${delay}"
+    fi
+}
+
 log_header() {
     local title="$1"
+    lazy_pace 0.05
     echo -e "\n${COLOR_CYAN}╭─ ${title} ${COLOR_CYAN}$(printf '─%.0s' $(seq 1 $((58 - ${#title}))))${COLOR_NC}"
 }
 
 log_footer() {
     echo -e "${COLOR_CYAN}╰─────────────────────────────────────────────────────────────${COLOR_NC}"
+    lazy_pace 0.08
 }
 
 log_info() {
     echo -e "  ${COLOR_BLUE}${GLYPH_INFO}${COLOR_NC}  ${COLOR_DIM}[INFO]${COLOR_NC}           $*"
+    lazy_pace
 }
 
 log_success() {
     echo -e "  ${COLOR_GREEN}${GLYPH_CHECK}${COLOR_NC}  ${COLOR_GREEN}[SUCCESS]${COLOR_NC}        $*"
+    lazy_pace 0.04
 }
 
 log_warn() {
     echo -e "  ${COLOR_YELLOW}${GLYPH_WARN}${COLOR_NC}  ${COLOR_YELLOW}[WARN]${COLOR_NC}           $*"
+    lazy_pace
 }
 
 log_error() {
     echo -e "  ${COLOR_RED}${GLYPH_CROSS}${COLOR_NC}  ${COLOR_RED}[ERROR]${COLOR_NC}          $*" >&2
+    lazy_pace
 }
 
 log_skip() {
     echo -e "  ${COLOR_GREEN}${GLYPH_SKIP}${COLOR_NC}  ${COLOR_DIM}[INSTALLED: SKIP]${COLOR_NC} $*"
+    lazy_pace
 }
 
 log_install() {
     echo -e "  ${COLOR_CYAN}${GLYPH_DOWNLOAD}${COLOR_NC}  ${COLOR_CYAN}[INSTALLING]${COLOR_NC}     $*"
+    lazy_pace
 }
 
 log_verified() {
     echo -e "  ${COLOR_GREEN}${GLYPH_SKIP}${COLOR_NC}  ${COLOR_DIM}[VERIFIED]${COLOR_NC}       $*"
+    lazy_pace
 }
 
 log_linked() {
     local dest="$1"
     local src="$2"
     echo -e "  ${COLOR_MAGENTA}${GLYPH_LINK}${COLOR_NC}  ${COLOR_MAGENTA}[LINKED]${COLOR_NC}         ${dest} ${COLOR_DIM}-> ${src}${COLOR_NC}"
+    lazy_pace
 }
 
 log_backup() {
     local dest="$1"
     local backup="$2"
     echo -e "  ${COLOR_YELLOW}${GLYPH_BACKUP}${COLOR_NC}  ${COLOR_YELLOW}[BACKUP]${COLOR_NC}         ${dest} ${COLOR_DIM}-> ${backup}${COLOR_NC}"
+    lazy_pace
 }
 
 # ==============================================================================
@@ -111,6 +134,7 @@ spin_task() {
 
     if [[ "${DRY_RUN}" = true ]]; then
         echo -e "  ${COLOR_CYAN}⠋${COLOR_NC} ${message}... ${COLOR_YELLOW}[DRY-RUN]${COLOR_NC}"
+        lazy_pace 0.15
         return 0
     fi
 
@@ -133,11 +157,12 @@ spin_task() {
     local task_pid=$!
 
     local i=0
-    while kill -0 "${task_pid}" 2>/dev/null; do
+    local min_frames=5
+    while kill -0 "${task_pid}" 2>/dev/null || [[ ${i} -lt ${min_frames} ]]; do
         local frame="${spin_chars[i % 10]}"
         printf "\r  \033[1;36m%s\033[0m %s... " "${frame}" "${message}"
         ((i++))
-        sleep 0.08
+        sleep 0.06
     done
 
     wait "${task_pid}"
@@ -147,6 +172,7 @@ spin_task() {
     if [[ ${exit_code} -eq 0 ]]; then
         printf "\r  \033[1;32m%s\033[0m %s \033[1;32m[DONE]\033[0m          \n" "${GLYPH_CHECK}" "${message}"
         rm -f "${log_file}"
+        lazy_pace 0.05
         return 0
     else
         printf "\r  \033[1;31m%s\033[0m %s \033[1;31m[FAILED]\033[0m        \n" "${GLYPH_CROSS}" "${message}"
@@ -549,6 +575,10 @@ phase_c_fonts() {
 
     local FONTS=(
         "ttf-jetbrains-mono-nerd"
+        "ttf-firacode-nerd"
+        "ttf-fira-code"
+        "ttf-jetbrains-mono"
+        "ttf-nerd-fonts-symbols"
         "noto-fonts-emoji"
     )
 
@@ -568,9 +598,9 @@ phase_c_fonts() {
         if [[ "${DRY_RUN}" = true ]]; then
             log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_FONTS[*]}"
         else
-            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing fonts via pacman...${COLOR_NC}"
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing nerd fonts (FiraCode, JetBrains Mono) via pacman...${COLOR_NC}"
             sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
-            log_success "Fonts installed."
+            log_success "Nerd fonts and glyph packages installed."
         fi
     fi
 
@@ -686,8 +716,11 @@ run_pipeline() {
 
     if [[ "${SKIP_PACKAGES}" = false ]]; then
         phase_a_core_and_aur
+        lazy_pace 0.1
         phase_b_dev_runtimes
+        lazy_pace 0.1
         phase_c_fonts
+        lazy_pace 0.1
     else
         log_header "${GLYPH_PACKAGE}  Packages & Runtimes (Bypassed)"
         log_info "Package and runtime installation bypassed (--skip-packages active)."
@@ -695,6 +728,7 @@ run_pipeline() {
     fi
 
     phase_d_macos_shortcuts
+    lazy_pace 0.1
     phase_e_shell_and_symlinks
 
     echo -e "\n${COLOR_GREEN}╭─────────────────────────────────────────────────────────────╮${COLOR_NC}"
@@ -715,6 +749,7 @@ Animated Idempotent Setup Pipeline for Manjaro GNOME Dotfiles.
 
 Options:
   --dry-run          Simulate pipeline execution without changing the filesystem or packages
+  --fast             Run in fast mode without visual lazyload delays
   --skip-packages    Skip all package installations (Core, AUR, Dev runtimes, Fonts)
   --skip-dev         Skip only developer stacks (Node/React, Laravel, Rails, DBs)
   --skip-extensions  Skip VS Code extensions installation
@@ -728,6 +763,9 @@ main() {
         case "${arg}" in
             --dry-run)
                 DRY_RUN=true
+                ;;
+            --fast)
+                FAST_MODE=true
                 ;;
             --skip-packages)
                 SKIP_PACKAGES=true
