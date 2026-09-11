@@ -1,8 +1,8 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
 # ==============================================================================
-# GUNDAM GLASS GNOME - STARSHIP PROMPT CONFIGURATION
-# Theme: Gundam 00 (Celestial Being / Trans-AM GN Particles)
+# MANJARO GNOME - STARSHIP PROMPT CONFIGURATION
+# Theme: Modern Crimson & Manjaro Particles
 # Platform: Manjaro Linux GNOME (Arch-based)
 # Developer: parikesitad-pm
 # ==============================================================================

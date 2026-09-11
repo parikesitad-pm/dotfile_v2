@@ -1,18 +1,5 @@
-# ==============================================================================
-# GUNDAM GLASS GNOME - ZSH CONFIGURATION (.zshrc)
-# Developer: parikesitad-pm (Project Analyst, QA Tester & Full-Stack Developer)
-# Optimized for: Manjaro Linux (GNOME Desktop / Wayland)
-# Tech Stack: React/TS, Ruby on Rails, Laravel/PHP
-# ==============================================================================
-
-# ================================
-# PATH (CLEAN & SINGLE SOURCE)
-# ================================
 export PATH="$HOME/.local/bin:$HOME/.spicetify:$HOME/.rbenv/bin:$HOME/.composer/vendor/bin:/usr/local/bin:$PATH"
 
-# ================================
-# OH MY ZSH SETUP
-# ================================
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME=""
 
@@ -22,24 +9,21 @@ plugins=(
   git
   sudo
   npm
-  archlinux
-  zsh-autosuggestions
-  zsh-completions
-  zsh-syntax-highlighting
   fzf-tab
 )
 
+# ── zstyle SEBELUM source OMZ ────────────────────────────
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z} m:{A-Z}={a-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' menu no
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --color=always $realpath'
+zstyle ':fzf-tab:*' switch-group ',' '.'
+
+# ── source OMZ ───────────────────────────────────────────
 [ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
 
-# ==============================================================================
-# ARCH-NATIVE PLUGINS (CONDITIONAL SOURCE)
-# ==============================================================================
-[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# ── compinit + fzf-tab SETELAH OMZ ───────────────────────
+autoload -Uz compinit && compinit
 
-# ================================
-# MAN PAGE COLORS
-# ================================
 autoload -U colors && colors
 export LESS_TERMCAP_mb=$'\E[1;31m'
 export LESS_TERMCAP_md=$'\E[1;36m'
@@ -49,9 +33,6 @@ export LESS_TERMCAP_so=$'\E[1;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[1;32m'
 
-# ================================
-# HISTORY & BEHAVIOR
-# ================================
 HISTSIZE=10000
 SAVEHIST=10000
 setopt HIST_IGNORE_ALL_DUPS
@@ -61,57 +42,46 @@ setopt CORRECT
 setopt AUTO_PUSHD
 setopt PUSHD_IGNORE_DUPS
 setopt PUSHD_SILENT
+setopt NO_CASE_GLOB
 
-# ================================
-# BRACKETED PASTE HANDLING
-# ================================
 autoload -Uz bracketed-paste-magic
 zle -N bracketed-paste bracketed-paste-magic
 unset zle_bracketed_paste
 
-# ================================
-# ALIASES
-# ================================
-
-# File & Navigation (Eza Modern Replacements)
+# ── Aliases: ls ──────────────────────────────────────────
 alias ls="eza --icons"
 alias ll="eza -la --icons"
 alias la="eza --icons -a"
 alias tree="eza --tree --icons"
-alias cd="z"
 
-# File View & Search (Arch / Manjaro Native Binaries)
+# ── Aliases: core utils ───────────────────────────────────
 if command -v bat &>/dev/null; then
   alias cat="bat"
-elif command -v batcat &>/dev/null; then
-  alias cat="batcat"
 fi
-alias find="fd"
-alias grep="rg"
+command -v fd &>/dev/null && alias find="fd"
+command -v rg &>/dev/null && alias grep="rg"
 
-# VS Code
+# ── Aliases: editor ───────────────────────────────────────
 alias c="code"
 alias .c="code ."
 
-# ================================
-# SYSTEM SHORTCUTS (MANJARO & GNOME)
-# ================================
+# ── Aliases: package manager ──────────────────────────────
+update() {
+  echo "📦 Updating Arch/Manjaro & AUR packages..."
+  yay -Syu --noconfirm
 
-# Pacman Package Management
-alias update="sudo pacman -Syu"
-alias upgrade="sudo pacman -Syu"
-alias install="sudo pacman -S"
-alias remove="sudo pacman -Rns"
-alias search="pacman -Ss"
+  if command -v flatpak &>/dev/null; then
+    echo "📦 Updating Flatpaks..."
+    flatpak update -y
+  fi
 
-# Pamac & AUR (Yay) Helpers
-alias pupdate="pamac update"
-alias pinstall="pamac install"
-alias yupdate="yay -Syu"
-alias yinstall="yay -S"
-alias ysearch="yay -Ss"
+  echo "✨ All systems up to date!"
+}
 
-# Safe Clean Orphan Packages (Autoremove)
+alias install="yay -S --needed --noconfirm"
+alias remove="yay -Rns"
+alias search="yay -Ss"
+
 pacclean() {
   local orphans
   orphans=($(pacman -Qtdq 2>/dev/null))
@@ -123,15 +93,15 @@ pacclean() {
 }
 alias autoremove="pacclean"
 
-# Power & GNOME Session Controls
+# ── Aliases: system ───────────────────────────────────────
 alias ribut="sudo reboot"
 alias matikan="sudo poweroff"
 alias shutdown="sudo poweroff"
-alias logout="gnome-session-quit --logout --no-prompt"
+alias keluar="gnome-session-quit --logout --no-prompt"
 alias lock="loginctl lock-session"
 alias gnome-ver="gnome-shell --version"
 
-# Clipboard Support (Wayland / X11) & Utilities
+# ── Aliases: clipboard ────────────────────────────────────
 if command -v wl-copy &>/dev/null; then
   alias copy="wl-copy"
   alias paste="wl-paste"
@@ -141,30 +111,27 @@ elif command -v xclip &>/dev/null; then
 fi
 alias open="xdg-open"
 
-# Safety
+# ── Aliases: file safety ──────────────────────────────────
 alias rm="rm -i"
 alias cp="cp -i"
 alias mv="mv -i"
-alias hapus="rm -rf"
+alias hapus="sudo rm -rf"
 
-# Misc
+# ── Aliases: misc ─────────────────────────────────────────
 alias cls="clear"
 alias spa="spicetify apply"
 alias sba="spicetify backup apply"
 alias sup="spicetify update"
 
-# --------------------------------
-# ⚛️ REACT / JS / TS (PNPM & YARN)
-# --------------------------------
+# ── Aliases: JS/TS dev ────────────────────────────────────
 alias ys="yarn start"
 alias yd="yarn dev"
 alias yb="yarn build"
 alias pd="pnpm dev"
 alias pb="pnpm build"
+alias allahuakbar="npm run dev"
 
-# --------------------------------
-# 🛤️ RUBY ON RAILS
-# --------------------------------
+# ── Aliases: Rails ────────────────────────────────────────
 alias rs="bin/rails server"
 alias rc="bin/rails console"
 alias rd="bin/dev"
@@ -172,28 +139,24 @@ alias dbm="bin/rails db:migrate"
 alias dbr="bin/rails db:rollback"
 alias b="bundle exec"
 alias rails="nocorrect rails"
-alias bin/rails="nocorrect bin/rails"
 alias bismillah="bin/dev"
 alias astagrifullah="rails console"
-alias allahuakbar="npm run dev"
 
-# --------------------------------
-# 🐘 LARAVEL
-# --------------------------------
+# ── Aliases: Laravel ──────────────────────────────────────
 alias pa="php artisan"
 alias pas="php artisan serve"
 alias pam="php artisan migrate"
 alias fresh="php artisan migrate:fresh --seed"
 alias tinker="php artisan tinker"
 
-# Custom Folder Navigation
+# ── Aliases: nav ──────────────────────────────────────────
 alias forg="cd project/forge/forge"
 alias dev="cd project"
 
-# ================================
-# FZF & FZF-TAB
-# ================================
-# Arch / Manjaro system-wide package or git clone fallback
+# git
+alias clone="git clone"
+
+# ── fzf ───────────────────────────────────────────────────
 if [ -f ~/.fzf.zsh ]; then
   source ~/.fzf.zsh
 elif [ -d /usr/share/fzf ]; then
@@ -201,26 +164,50 @@ elif [ -d /usr/share/fzf ]; then
   [ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
 fi
 
-zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --color=always $realpath'
-zstyle ':fzf-tab:*' switch-group ',' '.'
-
-# ================================
-# TOOL HOOKS & RUNTIMES
-# ================================
+# ── Tools init ────────────────────────────────────────────
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
+cd() {
+  if [ $# -eq 0 ]; then
+    builtin cd ~
+    return
+  fi
+
+  # 1. Coba path aslinya dulu
+  if builtin cd "$@" 2>/dev/null; then
+    return
+  fi
+
+  # 2. Cari folder lokal dengan nama yang sama tanpa peduli huruf besar/kecil (lab -> Lab)
+  local target=( "$1"*(N/) )
+  if [ ${#target[@]} -gt 0 ]; then
+    builtin cd "${target[1]}"
+    return
+  fi
+
+  # 3. Kalau tidak ada di folder saat ini, fallback ke zoxide
+  z "$@"
+}
+
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
-command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
+# command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
 
-# NVM Setup
+# ── NVM lazy load ─────────────────────────────────────────
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+nvm() {
+  unset -f nvm
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+  nvm "$@"
+}
 
-# ================================
-# CUSTOM FUNCTIONS
-# ================================
+# ── Plugins ───────────────────────────────────────────────
+[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+  source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+  source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# ── Flatpak helper ────────────────────────────────────────
 flat() {
   flatpak install flathub "$@"
 }
