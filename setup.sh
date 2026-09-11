@@ -399,7 +399,7 @@ phase_b_dev_runtimes() {
     log_header "${GLYPH_DEV} Phase B: Developer Stacks (React/TS, Laravel, Rails)"
 
     # 1. React / TypeScript & Node.js Package Managers
-    local JS_TOOLS=("yarn" "pnpm")
+    local JS_TOOLS=("npm" "yarn" "pnpm")
     local MISSING_JS_TOOLS=()
     for pkg in "${JS_TOOLS[@]}"; do
         if is_native_pkg_installed "${pkg}"; then
@@ -416,9 +416,9 @@ phase_b_dev_runtimes() {
         if [[ "${DRY_RUN}" = true ]]; then
             log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_JS_TOOLS[*]}"
         else
-            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing JS package managers (yarn, pnpm)...${COLOR_NC}"
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing JS package managers (npm, yarn, pnpm)...${COLOR_NC}"
             sudo pacman -S --needed --noconfirm "${MISSING_JS_TOOLS[@]}"
-            log_success "Yarn and Pnpm installed."
+            log_success "NPM, Yarn, and Pnpm installed."
         fi
     fi
 

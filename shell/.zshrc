@@ -194,12 +194,16 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 
 # ── NVM lazy load ─────────────────────────────────────────
 export NVM_DIR="$HOME/.nvm"
-nvm() {
-  unset -f nvm
+_load_nvm() {
+  unset -f nvm node npm npx _load_nvm
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-  nvm "$@"
 }
+
+nvm()  { _load_nvm; nvm "$@"; }
+node() { _load_nvm; node "$@"; }
+npm()  { _load_nvm; npm "$@"; }
+npx()  { _load_nvm; npx "$@"; }
 
 # ── Plugins ───────────────────────────────────────────────
 [ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \

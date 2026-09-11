@@ -124,7 +124,7 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
    - Memverifikasi paket AUR: `ulauncher`, `google-chrome`, `visual-studio-code-bin`, `spotify`.
    - Mengaktifkan daemon service Ulauncher (`systemctl --user enable --now ulauncher`).
 2. **Phase B: Developer Stacks & Runtimes (React/TS, Laravel, Rails, DBs)**
-   - **React / TS & Node.js**: Memasang NVM (`~/.nvm`), package manager modern `yarn` dan `pnpm`.
+   - **React / TS & Node.js**: Memasang NVM (`~/.nvm`), package manager modern `npm`, `yarn`, dan `pnpm`.
    - **PHP & Laravel**: Memasang `php`, `php-fpm`, `php-gd`, `php-intl`, `php-sodium`, `php-sqlite`, `php-pgsql`, `composer`, dan `sqlite`.
    - **Ruby on Rails**: Memasang dependensi kompilasi (`libyaml`, `libffi`, `openssl`, `zlib`, `readline`, `gdbm`) serta version manager `rbenv` dan `ruby-build`.
    - **Databases & Cache**: Memasang backend database lokal `postgresql`, `mariadb`, dan `redis`.
