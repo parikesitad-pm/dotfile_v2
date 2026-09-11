@@ -231,6 +231,20 @@ atomic_symlink() {
     fi
 }
 
+ensure_sudo_session() {
+    if [[ "${DRY_RUN}" = false ]]; then
+        if ! sudo -n true 2>/dev/null; then
+            echo -e "\n${COLOR_CYAN}🔐 Administrator privileges required for system packages.${COLOR_NC}"
+            echo -e "${COLOR_DIM}Please enter your password for sudo:${COLOR_NC}"
+            sudo -v
+        fi
+        # Keep-alive: update sudo timestamp in background until script finishes
+        while true; do sudo -n true; sleep 45; kill -0 "$$" 2>/dev/null || exit; done 2>/dev/null &
+        local sudo_keep_pid=$!
+        trap 'kill '"${sudo_keep_pid}"' 2>/dev/null || true; tput cnorm 2>/dev/null || true' EXIT INT TERM
+    fi
+}
+
 # ==============================================================================
 # 🦠 ORGANISMS: Pipeline Execution Phases
 # ==============================================================================
@@ -282,7 +296,13 @@ phase_a_core_and_aur() {
         for pkg in "${MISSING_OFFICIAL[@]}"; do
             log_install "${pkg}"
         done
-        spin_task "Installing native packages via pacman" sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_OFFICIAL[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing official packages via pacman...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"
+            log_success "Official packages installed."
+        fi
     fi
 
     # 2. AUR Helper (yay) Verification
@@ -298,9 +318,10 @@ phase_a_core_and_aur() {
             git clone https://aur.archlinux.org/yay.git "${BUILD_DIR}"
             (
                 cd "${BUILD_DIR}"
-                spin_task "Compiling and installing yay" makepkg -si --noconfirm
+                makepkg -si --noconfirm
             )
             rm -rf "${BUILD_DIR}"
+            log_success "yay installed successfully."
         fi
     fi
 
@@ -317,7 +338,13 @@ phase_a_core_and_aur() {
             log_skip "${pkg}"
         else
             log_install "${pkg}"
-            spin_task "Installing AUR package: ${pkg}" yay -S --noconfirm "${pkg}"
+            if [[ "${DRY_RUN}" = true ]]; then
+                log_info "[DRY-RUN] yay -S --needed --noconfirm ${pkg}"
+            else
+                echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing AUR package: ${pkg}...${COLOR_NC}"
+                yay -S --needed --noconfirm "${pkg}"
+                log_success "AUR package ${pkg} installed."
+            fi
         fi
     done
 
@@ -325,7 +352,8 @@ phase_a_core_and_aur() {
     if [[ "${DRY_RUN}" = true ]]; then
         log_info "Ulauncher user daemon activation [DRY-RUN]"
     else
-        spin_task "Enabling Ulauncher user service" bash -c "systemctl --user enable --now ulauncher 2>/dev/null || true"
+        systemctl --user enable --now ulauncher 2>/dev/null || true
+        log_success "Ulauncher user daemon configured."
     fi
 
     log_footer
@@ -336,7 +364,9 @@ phase_a_core_and_aur() {
 # ------------------------------------------------------------------------------
 phase_b_dev_runtimes() {
     if [[ "${SKIP_DEV}" = true ]]; then
+        log_header "${GLYPH_DEV}  Phase B: Developer Stacks (Bypassed)"
         log_info "Developer stacks installation bypassed (--skip-dev active)."
+        log_footer
         return 0
     fi
 
@@ -357,18 +387,44 @@ phase_b_dev_runtimes() {
         for pkg in "${MISSING_JS_TOOLS[@]}"; do
             log_install "${pkg}"
         done
-        spin_task "Installing JS package managers (yarn, pnpm)" sudo pacman -S --needed --noconfirm "${MISSING_JS_TOOLS[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_JS_TOOLS[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing JS package managers (yarn, pnpm)...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_JS_TOOLS[@]}"
+            log_success "Yarn and Pnpm installed."
+        fi
     fi
 
     # NVM (Node Version Manager) Setup
     if [[ -s "${HOME}/.nvm/nvm.sh" ]]; then
-        log_skip "nvm (Node Version Manager)"
+        log_skip "nvm"
     else
-        log_install "nvm (Node Version Manager)"
+        log_install "nvm"
         if [[ "${DRY_RUN}" = true ]]; then
             log_info "[DRY-RUN] curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
         else
-            spin_task "Installing NVM from official script" bash -c "curl -so- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing NVM from official source...${COLOR_NC}"
+            curl -so- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            log_success "NVM installed successfully."
+        fi
+    fi
+
+    # Node.js LTS check via NVM
+    export NVM_DIR="${HOME}/.nvm"
+    [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
+    if command -v nvm >/dev/null 2>&1; then
+        if ! command -v node >/dev/null 2>&1; then
+            if [[ "${DRY_RUN}" = true ]]; then
+                log_info "[DRY-RUN] nvm install --lts && nvm use --lts"
+            else
+                echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing Node.js LTS via NVM...${COLOR_NC}"
+                nvm install --lts
+                nvm use --lts
+                log_success "Node.js LTS installed."
+            fi
+        else
+            log_skip "node ($(node --version 2>/dev/null || true))"
         fi
     fi
 
@@ -397,7 +453,13 @@ phase_b_dev_runtimes() {
         for pkg in "${MISSING_LARA_PKGS[@]}"; do
             log_install "${pkg}"
         done
-        spin_task "Installing PHP & Laravel toolchain" sudo pacman -S --needed --noconfirm "${MISSING_LARA_PKGS[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_LARA_PKGS[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing PHP & Laravel toolchain...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_LARA_PKGS[@]}"
+            log_success "PHP, Composer, and Laravel extensions installed."
+        fi
     fi
 
     # 3. Ruby on Rails Prerequisites
@@ -422,7 +484,13 @@ phase_b_dev_runtimes() {
         for pkg in "${MISSING_RAILS_DEPS[@]}"; do
             log_install "${pkg}"
         done
-        spin_task "Installing Ruby compilation dependencies" sudo pacman -S --needed --noconfirm "${MISSING_RAILS_DEPS[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_RAILS_DEPS[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing Ruby compilation dependencies...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_RAILS_DEPS[@]}"
+            log_success "Ruby build dependencies installed."
+        fi
     fi
 
     # Ruby Version Managers (rbenv, ruby-build)
@@ -432,7 +500,13 @@ phase_b_dev_runtimes() {
             log_skip "${mgr}"
         else
             log_install "${mgr}"
-            spin_task "Installing ${mgr} from AUR" yay -S --needed --noconfirm "${mgr}"
+            if [[ "${DRY_RUN}" = true ]]; then
+                log_info "[DRY-RUN] yay -S --needed --noconfirm ${mgr}"
+            else
+                echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing ${mgr} via AUR...${COLOR_NC}"
+                yay -S --needed --noconfirm "${mgr}"
+                log_success "${mgr} installed."
+            fi
         fi
     done
 
@@ -455,7 +529,13 @@ phase_b_dev_runtimes() {
         for pkg in "${MISSING_DB_SERVICES[@]}"; do
             log_install "${pkg}"
         done
-        spin_task "Installing databases & cache backends" sudo pacman -S --needed --noconfirm "${MISSING_DB_SERVICES[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_DB_SERVICES[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing databases & cache backends (postgresql, mariadb, redis)...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_DB_SERVICES[@]}"
+            log_success "Database backends installed."
+        fi
     fi
 
     log_footer
@@ -485,7 +565,13 @@ phase_c_fonts() {
         for font_pkg in "${MISSING_FONTS[@]}"; do
             log_install "${font_pkg}"
         done
-        spin_task "Installing font packages" sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
+        if [[ "${DRY_RUN}" = true ]]; then
+            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_FONTS[*]}"
+        else
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Installing fonts via pacman...${COLOR_NC}"
+            sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
+            log_success "Fonts installed."
+        fi
     fi
 
     spin_task "Refreshing font cache (fc-cache)" fc-cache -f
@@ -515,20 +601,14 @@ phase_d_macos_shortcuts() {
         log_info "Disable GNOME interface animations [DRY-RUN]"
         log_info "Mask tracker miner background services [DRY-RUN]"
     else
-        spin_task "Configuring macOS-style screenshot shortcuts" bash -c "
-            gsettings set org.gnome.shell.keybindings screenshot \"['<Super><Shift>3']\"
-            gsettings set org.gnome.shell.keybindings screenshot-window \"['<Super><Shift>4']\"
-            gsettings set org.gnome.shell.keybindings show-screenshot-ui \"['<Super><Shift>5']\"
-        "
-
-        spin_task "Configuring macOS-style window controls (Super+Q, Super+H)" bash -c "
-            gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\"
-            gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\"
-        "
-
-        spin_task "Disabling GNOME UI animations for instant response" gsettings set org.gnome.desktop.interface enable-animations false
-
-        spin_task "Masking resource-heavy tracker miners" bash -c "systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true"
+        gsettings set org.gnome.shell.keybindings screenshot "['<Super><Shift>3']" 2>/dev/null || true
+        gsettings set org.gnome.shell.keybindings screenshot-window "['<Super><Shift>4']" 2>/dev/null || true
+        gsettings set org.gnome.shell.keybindings show-screenshot-ui "['<Super><Shift>5']" 2>/dev/null || true
+        gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']" 2>/dev/null || true
+        gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']" 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface enable-animations false 2>/dev/null || true
+        systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true
+        log_success "macOS shortcuts and GNOME optimizations applied."
     fi
 
     log_footer
@@ -602,6 +682,7 @@ print_banner() {
 
 run_pipeline() {
     print_banner
+    ensure_sudo_session
 
     if [[ "${SKIP_PACKAGES}" = false ]]; then
         phase_a_core_and_aur
