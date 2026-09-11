@@ -9,14 +9,32 @@
 set -euo pipefail
 
 # ==============================================================================
-# ⚛️ ATOMS: Logging, Configuration Primitives & Environment Constants
+# ⚛️ ATOMS: Styling, Configuration Primitives & Environment Constants
 # ==============================================================================
-readonly COLOR_RED='\033[0;31m'
-readonly COLOR_GREEN='\033[0;32m'
+readonly COLOR_RED='\033[1;31m'
+readonly COLOR_GREEN='\033[1;32m'
 readonly COLOR_YELLOW='\033[1;33m'
-readonly COLOR_BLUE='\033[0;34m'
-readonly COLOR_CYAN='\033[0;36m'
+readonly COLOR_BLUE='\033[1;34m'
+readonly COLOR_MAGENTA='\033[1;35m'
+readonly COLOR_CYAN='\033[1;36m'
+readonly COLOR_WHITE='\033[1;37m'
+readonly COLOR_DIM='\033[0;90m'
 readonly COLOR_NC='\033[0m'
+
+# Nerd Font Glyphs
+readonly GLYPH_MANJARO=' '
+readonly GLYPH_CHECK='✔'
+readonly GLYPH_CROSS='✖'
+readonly GLYPH_SKIP=''
+readonly GLYPH_DOWNLOAD=''
+readonly GLYPH_LINK=''
+readonly GLYPH_BACKUP='󰁯'
+readonly GLYPH_INFO='󰋽'
+readonly GLYPH_WARN=''
+readonly GLYPH_PACKAGE=''
+readonly GLYPH_FONT=''
+readonly GLYPH_KEYBOARD='󰌌'
+readonly GLYPH_SPARKLE='✨'
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_DIR="${SCRIPT_DIR}"
@@ -29,28 +47,111 @@ SKIP_PACKAGES=false
 SKIP_EXTENSIONS=false
 SKIP_SHORTCUTS=false
 
+# Cursor safety cleanup
+trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
+
+log_header() {
+    local title="$1"
+    echo -e "\n${COLOR_CYAN}╭─ ${title} ${COLOR_CYAN}$(printf '─%.0s' $(seq 1 $((58 - ${#title}))))${COLOR_NC}"
+}
+
+log_footer() {
+    echo -e "${COLOR_CYAN}╰─────────────────────────────────────────────────────────────${COLOR_NC}"
+}
+
 log_info() {
-    echo -e "${COLOR_BLUE}[INFO]${COLOR_NC} $*"
+    echo -e "  ${COLOR_BLUE}${GLYPH_INFO}${COLOR_NC}  ${COLOR_DIM}[INFO]${COLOR_NC}           $*"
 }
 
 log_success() {
-    echo -e "${COLOR_GREEN}[SUCCESS]${COLOR_NC} $*"
+    echo -e "  ${COLOR_GREEN}${GLYPH_CHECK}${COLOR_NC}  ${COLOR_GREEN}[SUCCESS]${COLOR_NC}        $*"
 }
 
 log_warn() {
-    echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC} $*"
+    echo -e "  ${COLOR_YELLOW}${GLYPH_WARN}${COLOR_NC}  ${COLOR_YELLOW}[WARN]${COLOR_NC}           $*"
 }
 
 log_error() {
-    echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $*" >&2
+    echo -e "  ${COLOR_RED}${GLYPH_CROSS}${COLOR_NC}  ${COLOR_RED}[ERROR]${COLOR_NC}          $*" >&2
 }
 
 log_skip() {
-    echo "[INSTALLED: SKIP] $*"
+    echo -e "  ${COLOR_GREEN}${GLYPH_SKIP}${COLOR_NC}  ${COLOR_DIM}[INSTALLED: SKIP]${COLOR_NC} $*"
 }
 
 log_install() {
-    echo "[INSTALLING] $*"
+    echo -e "  ${COLOR_CYAN}${GLYPH_DOWNLOAD}${COLOR_NC}  ${COLOR_CYAN}[INSTALLING]${COLOR_NC}     $*"
+}
+
+log_verified() {
+    echo -e "  ${COLOR_GREEN}${GLYPH_SKIP}${COLOR_NC}  ${COLOR_DIM}[VERIFIED]${COLOR_NC}       $*"
+}
+
+log_linked() {
+    local dest="$1"
+    local src="$2"
+    echo -e "  ${COLOR_MAGENTA}${GLYPH_LINK}${COLOR_NC}  ${COLOR_MAGENTA}[LINKED]${COLOR_NC}         ${dest} ${COLOR_DIM}-> ${src}${COLOR_NC}"
+}
+
+log_backup() {
+    local dest="$1"
+    local backup="$2"
+    echo -e "  ${COLOR_YELLOW}${GLYPH_BACKUP}${COLOR_NC}  ${COLOR_YELLOW}[BACKUP]${COLOR_NC}         ${dest} ${COLOR_DIM}-> ${backup}${COLOR_NC}"
+}
+
+# ==============================================================================
+# 🌀 ANIMATION ENGINE: Non-blocking Worker with Live Spinner
+# ==============================================================================
+spin_task() {
+    local message="$1"
+    shift
+    local cmd=("$@")
+
+    if [[ "${DRY_RUN}" = true ]]; then
+        echo -e "  ${COLOR_CYAN}⠋${COLOR_NC} ${message}... ${COLOR_YELLOW}[DRY-RUN]${COLOR_NC}"
+        return 0
+    fi
+
+    # Fallback for non-interactive / non-TTY environments
+    if [[ ! -t 1 ]]; then
+        echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${message}..."
+        "${cmd[@]}" >/dev/null 2>&1
+        echo -e "  ${COLOR_GREEN}${GLYPH_CHECK}${COLOR_NC} ${message} completed."
+        return 0
+    fi
+
+    local spin_chars=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    local log_file
+    log_file="$(mktemp)"
+
+    tput civis 2>/dev/null || true # Hide cursor
+
+    # Run command in background
+    "${cmd[@]}" >"${log_file}" 2>&1 &
+    local task_pid=$!
+
+    local i=0
+    while kill -0 "${task_pid}" 2>/dev/null; do
+        local frame="${spin_chars[i % 10]}"
+        printf "\r  \033[1;36m%s\033[0m %s... " "${frame}" "${message}"
+        ((i++))
+        sleep 0.08
+    done
+
+    wait "${task_pid}"
+    local exit_code=$?
+    tput cnorm 2>/dev/null || true # Restore cursor
+
+    if [[ ${exit_code} -eq 0 ]]; then
+        printf "\r  \033[1;32m%s\033[0m %s \033[1;32m[DONE]\033[0m          \n" "${GLYPH_CHECK}" "${message}"
+        rm -f "${log_file}"
+        return 0
+    else
+        printf "\r  \033[1;31m%s\033[0m %s \033[1;31m[FAILED]\033[0m        \n" "${GLYPH_CROSS}" "${message}"
+        cat "${log_file}" >&2
+        rm -f "${log_file}"
+        return ${exit_code}
+    fi
 }
 
 # ==============================================================================
@@ -101,19 +202,19 @@ atomic_symlink() {
 
     # Verify if destination is already an identical symlink
     if [[ -L "${dest}" ]] && [[ "$(readlink -f "${dest}")" = "$(readlink -f "${src}")" ]]; then
-        log_info "Symlink verified: ${dest} -> ${src}"
+        log_verified "${dest} -> ${src}"
         return 0
     fi
 
     # Non-destructive backup of existing file/directory/symlink
     if [[ -e "${dest}" ]] || [[ -L "${dest}" ]]; then
+        local dest_name
+        dest_name="$(basename "${dest}")"
         if [[ "${DRY_RUN}" = true ]]; then
-            log_warn "[DRY-RUN] Would backup existing ${dest} to ${BACKUP_DIR}/$(basename "${dest}")"
+            log_backup "${dest}" "${BACKUP_DIR}/${dest_name} [DRY-RUN]"
         else
             mkdir -p "${BACKUP_DIR}"
-            local dest_name
-            dest_name="$(basename "${dest}")"
-            log_warn "Backing up ${dest} -> ${BACKUP_DIR}/${dest_name}"
+            log_backup "${dest}" "${BACKUP_DIR}/${dest_name}"
             cp -a "${dest}" "${BACKUP_DIR}/${dest_name}"
             rm -rf "${dest}"
         fi
@@ -121,10 +222,10 @@ atomic_symlink() {
 
     # Atomic symlink creation
     if [[ "${DRY_RUN}" = true ]]; then
-        log_success "[DRY-RUN] ln -sf ${src} ${dest}"
+        log_linked "${dest}" "${src} [DRY-RUN]"
     else
         ln -sf "${src}" "${dest}"
-        log_success "Linked: ${dest} -> ${src}"
+        log_linked "${dest}" "${src}"
     fi
 }
 
@@ -136,7 +237,7 @@ atomic_symlink() {
 # Phase A: Core Apps & AUR Packages
 # ------------------------------------------------------------------------------
 phase_a_core_and_aur() {
-    log_info "=== [Phase A] Core Native Apps & AUR Packages ==="
+    log_header "${GLYPH_PACKAGE}  Phase A: Core Native Apps & AUR Packages"
 
     # 1. Official Repository Packages
     local OFFICIAL_PKGS=(
@@ -179,12 +280,7 @@ phase_a_core_and_aur() {
         for pkg in "${MISSING_OFFICIAL[@]}"; do
             log_install "${pkg}"
         done
-        if [[ "${DRY_RUN}" = true ]]; then
-            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_OFFICIAL[*]}"
-        else
-            sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"
-            log_success "Official packages installed."
-        fi
+        spin_task "Installing native packages via pacman" sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"
     fi
 
     # 2. AUR Helper (yay) Verification
@@ -200,10 +296,9 @@ phase_a_core_and_aur() {
             git clone https://aur.archlinux.org/yay.git "${BUILD_DIR}"
             (
                 cd "${BUILD_DIR}"
-                makepkg -si --noconfirm
+                spin_task "Compiling and installing yay" makepkg -si --noconfirm
             )
             rm -rf "${BUILD_DIR}"
-            log_success "yay installed successfully."
         fi
     fi
 
@@ -221,28 +316,26 @@ phase_a_core_and_aur() {
             log_skip "${pkg}"
         else
             log_install "${pkg}"
-            if [[ "${DRY_RUN}" = true ]]; then
-                log_info "[DRY-RUN] yay -S --noconfirm ${pkg}"
-            else
-                yay -S --noconfirm "${pkg}"
-            fi
+            spin_task "Installing AUR package: ${pkg}" yay -S --noconfirm "${pkg}"
         fi
     done
 
     # 4. Enable Ulauncher Daemon
-    log_info "Configuring Ulauncher user daemon..."
     if [[ "${DRY_RUN}" = true ]]; then
-        log_info "[DRY-RUN] systemctl --user enable --now ulauncher"
+        log_info "Ulauncher user daemon activation [DRY-RUN]"
     else
-        systemctl --user enable --now ulauncher 2>/dev/null || log_warn "Ulauncher daemon will activate upon graphical session login."
+        spin_task "Enabling Ulauncher user service" bash -c "systemctl --user enable --now ulauncher 2>/dev/null || true"
     fi
+
+    log_footer
 }
 
 # ------------------------------------------------------------------------------
 # Phase B: Fonts Installation & Cache Refresh
 # ------------------------------------------------------------------------------
 phase_b_fonts() {
-    log_info "=== [Phase B] Fonts Installation & Cache Refresh ==="
+    log_header "${GLYPH_FONT}  Phase B: Fonts Installation & Cache Refresh"
+
     local FONTS=(
         "ttf-jetbrains-mono-nerd"
         "noto-fonts-emoji"
@@ -261,20 +354,12 @@ phase_b_fonts() {
         for font_pkg in "${MISSING_FONTS[@]}"; do
             log_install "${font_pkg}"
         done
-        if [[ "${DRY_RUN}" = true ]]; then
-            log_info "[DRY-RUN] sudo pacman -S --needed --noconfirm ${MISSING_FONTS[*]}"
-        else
-            sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
-        fi
+        spin_task "Installing font packages" sudo pacman -S --needed --noconfirm "${MISSING_FONTS[@]}"
     fi
 
-    log_info "Refreshing font cache..."
-    if [[ "${DRY_RUN}" = true ]]; then
-        log_info "[DRY-RUN] fc-cache -f"
-    else
-        fc-cache -f
-        log_success "Font cache refreshed."
-    fi
+    spin_task "Refreshing font cache (fc-cache)" fc-cache -f
+
+    log_footer
 }
 
 # ------------------------------------------------------------------------------
@@ -286,44 +371,43 @@ phase_c_macos_shortcuts() {
         return 0
     fi
 
-    log_info "=== [Phase C] macOS-style Shortcuts & GNOME Performance Tweaks ==="
+    log_header "${GLYPH_KEYBOARD}  Phase C: macOS Shortcuts & GNOME Performance"
 
     if ! command -v gsettings >/dev/null 2>&1; then
         log_warn "gsettings not found, skipping GNOME shortcut configuration."
+        log_footer
         return 0
     fi
 
     if [[ "${DRY_RUN}" = true ]]; then
-        log_info "[DRY-RUN] Configure GNOME shortcuts (Super+Shift+3, Super+Shift+4, Super+Shift+5, Super+Q, Super+H)"
-        log_info "[DRY-RUN] Disable GNOME interface animations"
-        log_info "[DRY-RUN] Mask tracker miner services"
+        log_info "Configure GNOME shortcuts (Super+Shift+3, Super+Shift+4, Super+Shift+5, Super+Q, Super+H) [DRY-RUN]"
+        log_info "Disable GNOME interface animations [DRY-RUN]"
+        log_info "Mask tracker miner background services [DRY-RUN]"
     else
-        # Super+Shift+3: Fullscreen capture
-        gsettings set org.gnome.shell.keybindings screenshot "['<Super><Shift>3']"
-        # Super+Shift+4: Area/window capture
-        gsettings set org.gnome.shell.keybindings screenshot-window "['<Super><Shift>4']"
-        # Super+Shift+5: Screenshot UI
-        gsettings set org.gnome.shell.keybindings show-screenshot-ui "['<Super><Shift>5']"
-        # Super+Q: Close window
-        gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']"
-        # Super+H: Minimize window
-        gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']"
+        spin_task "Configuring macOS-style screenshot shortcuts" bash -c "
+            gsettings set org.gnome.shell.keybindings screenshot \"['<Super><Shift>3']\"
+            gsettings set org.gnome.shell.keybindings screenshot-window \"['<Super><Shift>4']\"
+            gsettings set org.gnome.shell.keybindings show-screenshot-ui \"['<Super><Shift>5']\"
+        "
 
-        # Disable GNOME animations for instantaneous response
-        gsettings set org.gnome.desktop.interface enable-animations false
+        spin_task "Configuring macOS-style window controls (Super+Q, Super+H)" bash -c "
+            gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\"
+            gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\"
+        "
 
-        # Mask resource-heavy tracker miners
-        systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true
+        spin_task "Disabling GNOME UI animations for instant response" gsettings set org.gnome.desktop.interface enable-animations false
 
-        log_success "macOS-style shortcuts and GNOME system tweaks applied."
+        spin_task "Masking resource-heavy tracker miners" bash -c "systemctl --user mask tracker-miner-fs-3.service tracker-miner-rss-3.service 2>/dev/null || true"
     fi
+
+    log_footer
 }
 
 # ------------------------------------------------------------------------------
 # Phase D: Shell Normalization, Symlinks & Extension Restore
 # ------------------------------------------------------------------------------
 phase_d_shell_and_symlinks() {
-    log_info "=== [Phase D] Shell Normalization, Symlinks & Extension Restore ==="
+    log_header "${GLYPH_LINK}  Phase D: Shell Normalization & Application Symlinks"
 
     # 1. Shell Links
     atomic_symlink "${DOTFILES_DIR}/shell/.zshrc" "${HOME}/.zshrc"
@@ -345,54 +429,43 @@ phase_d_shell_and_symlinks() {
     # 4. VS Code Extensions Restore
     if [[ "${SKIP_EXTENSIONS}" = true ]]; then
         log_info "Skipping VS Code extensions (--skip-extensions active)."
-        return 0
-    fi
+    else
+        local EXT_FILE="${DOTFILES_DIR}/vscode/extensions.list"
+        if [[ -f "${EXT_FILE}" ]] && command -v code >/dev/null 2>&1; then
+            echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Verifying VS Code extensions...${COLOR_NC}"
+            local CURRENT_EXTS
+            CURRENT_EXTS="$(code --list-extensions 2>/dev/null || true)"
 
-    local EXT_FILE="${DOTFILES_DIR}/vscode/extensions.list"
-    if [[ ! -f "${EXT_FILE}" ]]; then
-        log_warn "Extension list not found: ${EXT_FILE}"
-        return 0
-    fi
+            while IFS= read -r ext || [[ -n "${ext}" ]]; do
+                [[ "${ext}" =~ ^[[:space:]]*# ]] && continue
+                [[ -z "${ext// }" ]] && continue
 
-    if ! command -v code >/dev/null 2>&1; then
-        log_warn "VS Code CLI ('code') not found. Extensions can be installed after installing VS Code."
-        return 0
-    fi
-
-    log_info "Verifying VS Code extensions..."
-    local CURRENT_EXTS
-    CURRENT_EXTS="$(code --list-extensions 2>/dev/null || true)"
-
-    while IFS= read -r ext || [[ -n "${ext}" ]]; do
-        [[ "${ext}" =~ ^[[:space:]]*# ]] && continue
-        [[ -z "${ext// }" ]] && continue
-
-        if echo "${CURRENT_EXTS}" | grep -qx "${ext}"; then
-            log_skip "${ext}"
-        else
-            log_install "${ext}"
-            if [[ "${DRY_RUN}" = true ]]; then
-                log_info "[DRY-RUN] code --install-extension ${ext} --force"
-            else
-                code --install-extension "${ext}" --force || log_warn "Failed to install extension: ${ext}"
-            fi
+                if echo "${CURRENT_EXTS}" | grep -qx "${ext}"; then
+                    log_skip "${ext}"
+                else
+                    log_install "${ext}"
+                    spin_task "Installing extension ${ext}" code --install-extension "${ext}" --force
+                fi
+            done < "${EXT_FILE}"
         fi
-    done < "${EXT_FILE}"
+    fi
 
-    log_success "VS Code extension verification completed."
+    log_footer
 }
 
 # ==============================================================================
 # 📐 TEMPLATES: Pipeline Orchestration
 # ==============================================================================
 print_banner() {
-    echo -e "${COLOR_CYAN}====================================================${COLOR_NC}"
-    echo -e "${COLOR_CYAN}  Manjaro GNOME Automated Dotfiles Setup Pipeline   ${COLOR_NC}"
-    echo -e "${COLOR_CYAN}====================================================${COLOR_NC}"
-    log_info "Source Directory : ${DOTFILES_DIR}"
-    log_info "Backup Directory : ${BACKUP_DIR}"
+    clear 2>/dev/null || true
+    echo -e "${COLOR_CYAN}╭─────────────────────────────────────────────────────────────╮${COLOR_NC}"
+    echo -e "${COLOR_CYAN}│  ${COLOR_GREEN}${GLYPH_MANJARO}${COLOR_WHITE} MANJARO GNOME // DOTFILES SETUP PIPELINE                ${COLOR_CYAN}│${COLOR_NC}"
+    echo -e "${COLOR_CYAN}│  ${COLOR_DIM}Modular • Idempotent • Developer Environment               ${COLOR_CYAN}│${COLOR_NC}"
+    echo -e "${COLOR_CYAN}╰─────────────────────────────────────────────────────────────╯${COLOR_NC}"
+    echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Source Directory :${COLOR_NC} ${COLOR_DIM}${DOTFILES_DIR}${COLOR_NC}"
+    echo -e "  ${COLOR_CYAN}➜${COLOR_NC} ${COLOR_WHITE}Backup Directory :${COLOR_NC} ${COLOR_DIM}${BACKUP_DIR}${COLOR_NC}"
     if [[ "${DRY_RUN}" = true ]]; then
-        log_warn "Execution Mode   : DRY-RUN (No system changes will occur)"
+        echo -e "  ${COLOR_YELLOW}${GLYPH_WARN} Mode             :${COLOR_YELLOW} DRY-RUN (Simulating execution)${COLOR_NC}"
     fi
 }
 
@@ -403,16 +476,19 @@ run_pipeline() {
         phase_a_core_and_aur
         phase_b_fonts
     else
+        log_header "${GLYPH_PACKAGE}  Phase A & B: Packages (Bypassed)"
         log_info "Package installation bypassed (--skip-packages active)."
+        log_footer
     fi
 
     phase_c_macos_shortcuts
     phase_d_shell_and_symlinks
 
-    echo -e "\n${COLOR_GREEN}====================================================${COLOR_NC}"
-    echo -e "${COLOR_GREEN}  Pipeline execution completed successfully!        ${COLOR_NC}"
-    echo -e "${COLOR_GREEN}====================================================${COLOR_NC}"
-    log_info "To apply shell changes in current terminal: source ~/.zshrc"
+    echo -e "\n${COLOR_GREEN}╭─────────────────────────────────────────────────────────────╮${COLOR_NC}"
+    echo -e "${COLOR_GREEN}│  ${GLYPH_SPARKLE} Pipeline execution completed successfully!              ${COLOR_GREEN}│${COLOR_NC}"
+    echo -e "${COLOR_GREEN}│  ${GLYPH_CHECK} All configurations are verified and symlinked.          ${COLOR_GREEN}│${COLOR_NC}"
+    echo -e "${COLOR_GREEN}│  ${COLOR_WHITE}➜ Apply shell changes:${COLOR_NC} ${COLOR_YELLOW}source ~/.zshrc                     ${COLOR_GREEN}│${COLOR_NC}"
+    echo -e "${COLOR_GREEN}╰─────────────────────────────────────────────────────────────╯${COLOR_NC}\n"
 }
 
 # ==============================================================================
@@ -422,7 +498,7 @@ print_help() {
     cat << HELP_TEXT
 Usage: ./setup.sh [OPTIONS]
 
-Pipeline Orchestrator for Manjaro GNOME Dotfiles.
+Animated Idempotent Setup Pipeline for Manjaro GNOME Dotfiles.
 
 Options:
   --dry-run          Simulate pipeline execution without changing the filesystem or packages

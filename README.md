@@ -24,12 +24,12 @@
 ## ✨ Fitur Utama
 
 - 🎨 **Modern Glassmorphism & UI Aesthetic**:
-  - **Kitty Terminal**: Transparan (opacity 0.85), Wayland native, clipboard control terintegrasi, dan pembersihan spasi otomatis (*smart trailing spaces*).
+  - **Kitty Terminal**: Transparan (opacity 0.85), Wayland native, clipboard control terintegrasi, dan pembersihan spasi otomatis (_smart trailing spaces_).
   - **Starship Prompt**: Skema warna Crimson dengan logo resmi **Manjaro (` `)**, modul Git, runtime status (Node, Ruby, PHP, Go, Rust), dan path direktori bersih.
-  - **VS Code**: Pengaturan modern, tema Solarized/Tokyo Night, font *Fira Code* dengan ligatures aktif, serta formatting terintegrasi.
+  - **VS Code**: Pengaturan modern, tema Solarized/Tokyo Night, font _Fira Code_ dengan ligatures aktif, serta formatting terintegrasi.
 - ⚡ **ZSH Teroptimasi & Cepat**:
   - **Defensive Bracketed Paste**: Menghilangkan polusi karakter escape sequence `^[[200~` saat copy-paste teks ke terminal.
-  - **Smart Navigation `cd`**: Otomatis mendeteksi folder tanpa memedulikan huruf besar/kecil (*case-insensitive* misal `cd lab` -> `cd Lab`) dan fallback cerdas ke Zoxide (`z`).
+  - **Smart Navigation `cd`**: Otomatis mendeteksi folder tanpa memedulikan huruf besar/kecil (_case-insensitive_ misal `cd lab` -> `cd Lab`) dan fallback cerdas ke Zoxide (`z`).
   - **Lazy-Loaded NVM**: Startup terminal instan (< 30ms) dengan memuat Node Version Manager hanya saat perintah `nvm` dipanggil pertama kali.
   - **Full-Sync Update**: Perintah `update` menyinkronkan paket resmi Arch/Manjaro, AUR via Yay, dan paket Flatpak sekaligus.
 - 🍎 **macOS-Style Shortcuts di GNOME**:
@@ -44,18 +44,18 @@
 
 ## 🖥️ Spesifikasi Lingkungan
 
-| Komponen | Spesifikasi / Konfigurasi |
-|---|---|
-| **Distribusi OS** | Manjaro Linux (Rolling Release, Kernel 6.x / 7.x) |
-| **Desktop Environment** | GNOME Shell (Wayland Display Server) |
-| **Shell Utama** | Zsh + Oh My Zsh (Plugin: git, sudo, npm, fzf-tab, autosuggestions, syntax-highlighting) |
-| **Prompt Engine** | Starship Cross-Shell Prompt (Ikon Manjaro  ) |
-| **Terminal Emulator** | Kitty (GPU Accelerated, Wayland Native) |
-| **Editor Utama** | Visual Studio Code (`visual-studio-code-bin` / `code`) |
-| **Font Terminal** | JetBrainsMono Nerd Font (`ttf-jetbrains-mono-nerd`) |
-| **Font Emoji** | Noto Color Emoji (`noto-fonts-emoji`) |
-| **Font Editor** | Fira Code (`ttf-fira-code`) dengan ligatures |
-| **Clipboard CLI** | `wl-clipboard` (`wl-copy`, `wl-paste`) |
+| Komponen                | Spesifikasi / Konfigurasi                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| **Distribusi OS**       | Manjaro Linux (Rolling Release, Kernel 6.x / 7.x)                                       |
+| **Desktop Environment** | GNOME Shell (Wayland Display Server)                                                    |
+| **Shell Utama**         | Zsh + Oh My Zsh (Plugin: git, sudo, npm, fzf-tab, autosuggestions, syntax-highlighting) |
+| **Prompt Engine**       | Starship Cross-Shell Prompt (Ikon Manjaro  )                                           |
+| **Terminal Emulator**   | Kitty (GPU Accelerated, Wayland Native)                                                 |
+| **Editor Utama**        | Visual Studio Code (`visual-studio-code-bin` / `code`)                                  |
+| **Font Terminal**       | JetBrainsMono Nerd Font (`ttf-jetbrains-mono-nerd`)                                     |
+| **Font Emoji**          | Noto Color Emoji (`noto-fonts-emoji`)                                                   |
+| **Font Editor**         | Fira Code (`ttf-fira-code`) dengan ligatures                                            |
+| **Clipboard CLI**       | `wl-clipboard` (`wl-copy`, `wl-paste`)                                                  |
 
 ---
 
@@ -87,7 +87,9 @@
 ## 🚀 Panduan Instalasi Cepat
 
 ### Single-Command Bootstrap
+
 Jalankan satu perintah berikut di terminal Manjaro GNOME Anda untuk mengklon dan mengeksekusi pipeline:
+
 ```bash
 git clone https://github.com/parikesitad-pm/dotfile_v2.git ~/dotfiles && cd ~/dotfiles && ./setup.sh
 ```
@@ -95,13 +97,17 @@ git clone https://github.com/parikesitad-pm/dotfile_v2.git ~/dotfiles && cd ~/do
 ### Opsi Eksekusi Bertahap
 
 #### 1. Uji Coba Simulasi (Dry-Run)
+
 Pastikan semua dependensi dan target symlink terdeteksi tanpa mengubah file sistem:
+
 ```bash
 ./setup.sh --dry-run
 ```
 
 #### 2. Eksekusi Pemasangan Penuh
+
 Jalankan script untuk menginstal paket, membuat symlink, mengatur pintasan macOS di GNOME, dan memulihkan ekstensi VS Code:
+
 ```bash
 ./setup.sh
 ```
@@ -130,6 +136,7 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
    - Memasang ekstensi VS Code dari `vscode/extensions.list` dengan pengecekan agar tidak mengulang instalasi yang sudah ada.
 
 ### Flag Modular yang Tersedia
+
 ```bash
 # Lewati instalasi paket Pacman dan AUR (hanya perbarui symlink & konfigurasi)
 ./setup.sh --skip-packages
@@ -150,13 +157,13 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
 
 Pintasan berikut otomatis dikonfigurasi saat pipeline dijalankan:
 
-| Shortcut | Fungsi Desktop GNOME | Skema GSettings |
-|---|---|---|
-| `Super + Shift + 3` | Tangkapan layar layar penuh (*Fullscreen Screenshot*) | `org.gnome.shell.keybindings screenshot` |
-| `Super + Shift + 4` | Tangkapan layar jendela/area tertentu | `org.gnome.shell.keybindings screenshot-window` |
-| `Super + Shift + 5` | Buka antarmuka Screenshot & Screen Recording | `org.gnome.shell.keybindings show-screenshot-ui` |
-| `Super + Q` | Tutup jendela aktif (*Close Window*) | `org.gnome.desktop.wm.keybindings close` |
-| `Super + H` | Minimalkan jendela aktif (*Minimize Window*) | `org.gnome.desktop.wm.keybindings minimize` |
+| Shortcut            | Fungsi Desktop GNOME                                  | Skema GSettings                                  |
+| ------------------- | ----------------------------------------------------- | ------------------------------------------------ |
+| `Super + Shift + 3` | Tangkapan layar layar penuh (_Fullscreen Screenshot_) | `org.gnome.shell.keybindings screenshot`         |
+| `Super + Shift + 4` | Tangkapan layar jendela/area tertentu                 | `org.gnome.shell.keybindings screenshot-window`  |
+| `Super + Shift + 5` | Buka antarmuka Screenshot & Screen Recording          | `org.gnome.shell.keybindings show-screenshot-ui` |
+| `Super + Q`         | Tutup jendela aktif (_Close Window_)                  | `org.gnome.desktop.wm.keybindings close`         |
+| `Super + H`         | Minimalkan jendela aktif (_Minimize Window_)          | `org.gnome.desktop.wm.keybindings minimize`      |
 
 ---
 
@@ -165,62 +172,67 @@ Pintasan berikut otomatis dikonfigurasi saat pipeline dijalankan:
 File [`.zshrc`](./shell/.zshrc) memuat utilitas dan alias produktivitas harian:
 
 ### 📦 Manajemen Paket & Pembaruan Sistem
-| Alias / Fungsi | Perintah Asli | Deskripsi |
-|---|---|---|
-| `update` | Fungsi `update` | Sinkronisasi penuh paket Pacman, AUR (Yay), dan Flatpak |
-| `install <pkg>` | `yay -S --needed --noconfirm <pkg>` | Pasang paket resmi atau AUR tanpa konfirmasi |
-| `remove <pkg>` | `yay -Rns <pkg>` | Hapus paket beserta seluruh dependensinya |
-| `search <query>` | `yay -Ss <query>` | Cari paket di repositori resmi dan AUR |
-| `autoremove` | Fungsi `pacclean` | Bersihkan orphaned packages dengan aman tanpa error |
+
+| Alias / Fungsi   | Perintah Asli                       | Deskripsi                                               |
+| ---------------- | ----------------------------------- | ------------------------------------------------------- |
+| `update`         | Fungsi `update`                     | Sinkronisasi penuh paket Pacman, AUR (Yay), dan Flatpak |
+| `install <pkg>`  | `yay -S --needed --noconfirm <pkg>` | Pasang paket resmi atau AUR tanpa konfirmasi            |
+| `remove <pkg>`   | `yay -Rns <pkg>`                    | Hapus paket beserta seluruh dependensinya               |
+| `search <query>` | `yay -Ss <query>`                   | Cari paket di repositori resmi dan AUR                  |
+| `autoremove`     | Fungsi `pacclean`                   | Bersihkan orphaned packages dengan aman tanpa error     |
 
 ### 🪟 GNOME Session & Desktop Controls
-| Alias | Perintah Asli | Deskripsi |
-|---|---|---|
-| `keluar` | `gnome-session-quit --logout --no-prompt` | Keluar dari sesi GNOME |
-| `lock` | `loginctl lock-session` | Kunci layar desktop |
-| `ribut` | `sudo reboot` | Restart komputer |
-| `matikan` / `shutdown` | `sudo poweroff` | Matikan komputer |
-| `gnome-ver` | `gnome-shell --version` | Cek versi GNOME Shell |
-| `copy` | `wl-copy` | Salin teks ke clipboard Wayland |
-| `paste` | `wl-paste` | Tempel teks dari clipboard Wayland |
-| `open <file/url>` | `xdg-open <file/url>` | Buka file atau URL dengan aplikasi bawaan |
+
+| Alias                  | Perintah Asli                             | Deskripsi                                 |
+| ---------------------- | ----------------------------------------- | ----------------------------------------- |
+| `keluar`               | `gnome-session-quit --logout --no-prompt` | Keluar dari sesi GNOME                    |
+| `lock`                 | `loginctl lock-session`                   | Kunci layar desktop                       |
+| `ribut`                | `sudo reboot`                             | Restart komputer                          |
+| `matikan` / `shutdown` | `sudo poweroff`                           | Matikan komputer                          |
+| `gnome-ver`            | `gnome-shell --version`                   | Cek versi GNOME Shell                     |
+| `copy`                 | `wl-copy`                                 | Salin teks ke clipboard Wayland           |
+| `paste`                | `wl-paste`                                | Tempel teks dari clipboard Wayland        |
+| `open <file/url>`      | `xdg-open <file/url>`                     | Buka file atau URL dengan aplikasi bawaan |
 
 ### 🔍 Navigasi & File CLI
-| Alias | Perintah Asli | Deskripsi |
-|---|---|---|
-| `ls` | `eza --icons` | Tampilan berkas modern dengan ikon |
-| `ll` | `eza -la --icons` | Daftar detail berkas lengkap |
-| `la` | `eza --icons -a` | Tampilan berkas tersembunyi (*hidden files*) |
-| `tree` | `eza --tree --icons` | Tampilan visual pohon hierarki direktori |
-| `cd <dir>` | Fungsi pintar `cd` | Case-insensitive folder jump dengan fallback ke Zoxide |
-| `cat <file>` | `bat <file>` | Syntax highlighting file viewer |
-| `find <query>` | `fd <query>` | Pencarian berkas ultra cepat |
-| `grep <query>` | `rg <query>` | Pencarian teks dalam berkas via Ripgrep |
-| `c` / `.c` | `code` / `code .` | Buka Visual Studio Code |
-| `clone <url>` | `git clone <url>` | Klon repositori git |
+
+| Alias          | Perintah Asli        | Deskripsi                                              |
+| -------------- | -------------------- | ------------------------------------------------------ |
+| `ls`           | `eza --icons`        | Tampilan berkas modern dengan ikon                     |
+| `ll`           | `eza -la --icons`    | Daftar detail berkas lengkap                           |
+| `la`           | `eza --icons -a`     | Tampilan berkas tersembunyi (_hidden files_)           |
+| `tree`         | `eza --tree --icons` | Tampilan visual pohon hierarki direktori               |
+| `cd <dir>`     | Fungsi pintar `cd`   | Case-insensitive folder jump dengan fallback ke Zoxide |
+| `cat <file>`   | `bat <file>`         | Syntax highlighting file viewer                        |
+| `find <query>` | `fd <query>`         | Pencarian berkas ultra cepat                           |
+| `grep <query>` | `rg <query>`         | Pencarian teks dalam berkas via Ripgrep                |
+| `c` / `.c`     | `code` / `code .`    | Buka Visual Studio Code                                |
+| `clone <url>`  | `git clone <url>`    | Klon repositori git                                    |
 
 ### ⚛️ Developer Stacks (React/TS, Rails, Laravel)
-| Alias | Perintah Asli | Ekosistem |
-|---|---|---|
-| `ys` / `yd` / `yb` | `yarn start` / `yarn dev` / `yarn build` | Yarn |
-| `pd` / `pb` | `pnpm dev` / `pnpm build` | PNPM |
-| `allahuakbar` | `npm run dev` | NPM Run Dev |
-| `rs` / `rc` / `rd` | `bin/rails server` / `console` / `bin/dev` | Ruby on Rails |
-| `dbm` / `dbr` | `bin/rails db:migrate` / `rollback` | Rails DB |
-| `b` | `bundle exec` | Bundler |
-| `bismillah` | `bin/dev` | Rails Dev Runner |
-| `astagrifullah` | `rails console` | Rails REPL |
-| `pa` / `pas` / `pam` | `php artisan` / `serve` / `migrate` | Laravel |
-| `fresh` | `php artisan migrate:fresh --seed` | Laravel Refresh & Seed |
-| `tinker` | `php artisan tinker` | Laravel REPL |
-| `forg` | `cd project/forge/forge` | Quick Project Jump |
-| `dev` | `cd project` | Quick Project Jump |
+
+| Alias                | Perintah Asli                              | Ekosistem              |
+| -------------------- | ------------------------------------------ | ---------------------- |
+| `ys` / `yd` / `yb`   | `yarn start` / `yarn dev` / `yarn build`   | Yarn                   |
+| `pd` / `pb`          | `pnpm dev` / `pnpm build`                  | PNPM                   |
+| `allahuakbar`        | `npm run dev`                              | NPM Run Dev            |
+| `rs` / `rc` / `rd`   | `bin/rails server` / `console` / `bin/dev` | Ruby on Rails          |
+| `dbm` / `dbr`        | `bin/rails db:migrate` / `rollback`        | Rails DB               |
+| `b`                  | `bundle exec`                              | Bundler                |
+| `bismillah`          | `bin/dev`                                  | Rails Dev Runner       |
+| `astagrifullah`      | `rails console`                            | Rails REPL             |
+| `pa` / `pas` / `pam` | `php artisan` / `serve` / `migrate`        | Laravel                |
+| `fresh`              | `php artisan migrate:fresh --seed`         | Laravel Refresh & Seed |
+| `tinker`             | `php artisan tinker`                       | Laravel REPL           |
+| `forg`               | `cd project/forge/forge`                   | Quick Project Jump     |
+| `dev`                | `cd project`                               | Quick Project Jump     |
 
 ---
 
 ## 🪟 Penyesuaian Khusus Manjaro GNOME Desktop
 
 ### 1. Ekstensi GNOME yang Direkomendasikan
+
 1. **Dash to Dock**:
    - Memindahkan dock ke bawah atau kiri dengan gaya macOS, auto-hide, dan custom opacity:
      ```bash
@@ -238,6 +250,7 @@ File [`.zshrc`](./shell/.zshrc) memuat utilitas dan alias produktivitas harian:
      ```
 
 ### 2. Navigasi Gestures Bawaan GNOME Wayland
+
 - **Swipe 3 jari ke atas**: Buka Overview & Application Grid.
 - **Swipe 3 jari ke kiri/kanan**: Berpindah antar Workspace secara instan.
 - **Pinch 2 jari**: Zoom in/out pada aplikasi yang didukung.
@@ -246,23 +259,24 @@ File [`.zshrc`](./shell/.zshrc) memuat utilitas dan alias produktivitas harian:
 
 ## 🔄 Pemetaan Paket (Mint / APT → Manjaro / Pacman)
 
-| Utility | Linux Mint (APT) | Manjaro (Pacman / AUR) | Catatan Binary |
-|---|---|---|---|
-| Modern `ls` | `apt install eza` | `sudo pacman -S eza` | Binary: `eza` |
-| Fast `cat` | `apt install bat` (`batcat`) | `sudo pacman -S bat` | **Di Manjaro binary adalah `bat` (bukan `batcat`)** |
-| Fast `find` | `apt install fd-find` (`fdfind`) | `sudo pacman -S fd` | **Di Manjaro binary adalah `fd` (bukan `fdfind`)** |
-| Code Search | `apt install ripgrep` | `sudo pacman -S ripgrep` | Binary: `rg` |
-| Fuzzy Finder | `apt install fzf` | `sudo pacman -S fzf` | Scripts di `/usr/share/fzf/` |
-| Prompt | Cargo / Homebrew | `sudo pacman -S starship` | Konfigurasi di `~/.config/starship.toml` |
-| Terminal | `apt install kitty` | `sudo pacman -S kitty` | GPU accelerated, Wayland native |
-| VS Code | DEB package | `yay -S visual-studio-code-bin` | Official binary Microsoft |
-| Clipboard | `xclip` | `sudo pacman -S wl-clipboard` | `wl-copy` & `wl-paste` native Wayland |
+| Utility      | Linux Mint (APT)                 | Manjaro (Pacman / AUR)          | Catatan Binary                                      |
+| ------------ | -------------------------------- | ------------------------------- | --------------------------------------------------- |
+| Modern `ls`  | `apt install eza`                | `sudo pacman -S eza`            | Binary: `eza`                                       |
+| Fast `cat`   | `apt install bat` (`batcat`)     | `sudo pacman -S bat`            | **Di Manjaro binary adalah `bat` (bukan `batcat`)** |
+| Fast `find`  | `apt install fd-find` (`fdfind`) | `sudo pacman -S fd`             | **Di Manjaro binary adalah `fd` (bukan `fdfind`)**  |
+| Code Search  | `apt install ripgrep`            | `sudo pacman -S ripgrep`        | Binary: `rg`                                        |
+| Fuzzy Finder | `apt install fzf`                | `sudo pacman -S fzf`            | Scripts di `/usr/share/fzf/`                        |
+| Prompt       | Cargo / Homebrew                 | `sudo pacman -S starship`       | Konfigurasi di `~/.config/starship.toml`            |
+| Terminal     | `apt install kitty`              | `sudo pacman -S kitty`          | GPU accelerated, Wayland native                     |
+| VS Code      | DEB package                      | `yay -S visual-studio-code-bin` | Official binary Microsoft                           |
+| Clipboard    | `xclip`                          | `sudo pacman -S wl-clipboard`   | `wl-copy` & `wl-paste` native Wayland               |
 
 ---
 
 ## ⏪ Manajemen Backup & Rollback
 
 Setiap kali `setup.sh` mendeteksi file konfigurasi lama di sistem pengguna yang belum berupa symlink ke repositori ini:
+
 1. File lama **tidak langsung ditimpa**, melainkan dicadangkan ke direktori terpusat bertanggal:
    ```text
    ~/.dotfiles_backup/YYYYMMDD_HHMMSS/
@@ -280,20 +294,26 @@ Setiap kali `setup.sh` mendeteksi file konfigurasi lama di sistem pengguna yang 
 ## 🔧 Pemecahan Masalah (Troubleshooting)
 
 ### 1. Database Pacman Terkunci (`/var/lib/pacman/db.lck`)
+
 Jika proses instalasi pacman terhenti mendadak:
+
 ```bash
 sudo rm /var/lib/pacman/db.lck
 ```
 
 ### 2. Font Icon / Glyph Kotak-Kotak di Kitty atau Starship
+
 Pastikan Nerd Fonts sudah terpasang dan cache font diperbarui:
+
 ```bash
 sudo pacman -S --needed ttf-jetbrains-mono-nerd noto-fonts-emoji ttf-fira-code
 fc-cache -fv
 ```
 
 ### 3. FZF Keybindings (Ctrl+R / Ctrl+T) Belum Aktif
+
 Pastikan paket `fzf` sudah terpasang via pacman:
+
 ```bash
 sudo pacman -S fzf
 source ~/.zshrc
@@ -309,4 +329,5 @@ source ~/.zshrc
 - **Theme Concept**: Modern Glassmorphism & macOS-style Productivity
 
 ---
-*Happy Hacking on Manjaro GNOME!* 🚀
+
+_Happy Hacking on Manjaro GNOME!_ 🚀
