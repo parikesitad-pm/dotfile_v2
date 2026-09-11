@@ -308,7 +308,6 @@ phase_a_core_and_aur() {
         "google-chrome"
         "visual-studio-code-bin"
         "spotify"
-        "zapzap"
     )
 
     for pkg in "${AUR_PKGS[@]}"; do

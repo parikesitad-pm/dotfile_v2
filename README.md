@@ -121,7 +121,7 @@ Script [`setup.sh`](./setup.sh) dibangun dengan prinsip **Atomic Design** yang d
 1. **Phase A: Core Native Apps & AUR Packages**
    - Memverifikasi paket resmi melalui `pacman -Qi`: `base-devel`, `git`, `curl`, `wget`, `btop`, `fastfetch`, `firefox`, `discord`, `zsh`, `zsh-autosuggestions`, `zsh-syntax-highlighting`, `github-cli`, `eza`, `zoxide`, `gnome-keyring`, `libsecret`, `seahorse`, `kitty`, `starship`, `bat`, `fd`, `ripgrep`, `fzf`, `wl-clipboard`.
    - Memverifikasi AUR helper (`yay`), otomatis meng-clone dan membangun dari AUR jika belum ada.
-   - Memverifikasi paket AUR: `ulauncher`, `google-chrome`, `visual-studio-code-bin`, `spotify`, `zapzap`.
+   - Memverifikasi paket AUR: `ulauncher`, `google-chrome`, `visual-studio-code-bin`, `spotify`.
    - Mengaktifkan daemon service Ulauncher (`systemctl --user enable --now ulauncher`).
 2. **Phase B: Fonts Installation & Cache Refresh**
    - Memverifikasi dan memasang `ttf-jetbrains-mono-nerd` dan `noto-fonts-emoji`.
