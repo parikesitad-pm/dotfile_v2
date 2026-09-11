@@ -735,6 +735,7 @@ run_pipeline() {
     echo -e "${COLOR_GREEN}│  ${GLYPH_SPARKLE} Pipeline execution completed successfully!              ${COLOR_GREEN}│${COLOR_NC}"
     echo -e "${COLOR_GREEN}│  ${GLYPH_CHECK} All configurations are verified and symlinked.          ${COLOR_GREEN}│${COLOR_NC}"
     echo -e "${COLOR_GREEN}│  ${COLOR_WHITE}➜ Apply shell changes:${COLOR_NC} ${COLOR_YELLOW}source ~/.zshrc                     ${COLOR_GREEN}│${COLOR_NC}"
+    echo -e "${COLOR_GREEN}│  ${COLOR_MAGENTA}♥${COLOR_NC} ${COLOR_WHITE}Terimakasih, happy coding <3                            ${COLOR_GREEN}│${COLOR_NC}"
     echo -e "${COLOR_GREEN}╰─────────────────────────────────────────────────────────────╯${COLOR_NC}\n"
 }
 
