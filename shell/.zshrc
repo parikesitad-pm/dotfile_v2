@@ -1,3 +1,4 @@
+typeset -U path PATH  # buang PATH duplikat
 export PATH="$HOME/.local/bin:$HOME/.spicetify:$HOME/.rbenv/bin:$HOME/.composer/vendor/bin:/usr/local/bin:$PATH"
 
 export ZSH="$HOME/.oh-my-zsh"
@@ -15,14 +16,11 @@ plugins=(
 # ── zstyle SEBELUM source OMZ ────────────────────────────
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z} m:{A-Z}={a-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --color=always $realpath'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons=always --color=always $realpath'
 zstyle ':fzf-tab:*' switch-group ',' '.'
 
 # ── source OMZ ───────────────────────────────────────────
 [ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
-
-# ── compinit + fzf-tab SETELAH OMZ ───────────────────────
-autoload -Uz compinit && compinit
 
 autoload -U colors && colors
 export LESS_TERMCAP_mb=$'\E[1;31m'
@@ -33,9 +31,13 @@ export LESS_TERMCAP_so=$'\E[1;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[1;32m'
 
-HISTSIZE=10000
-SAVEHIST=10000
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
 setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE   # command diawali spasi nggak masuk history
+setopt HIST_REDUCE_BLANKS
+setopt EXTENDED_HISTORY
 setopt SHARE_HISTORY
 setopt AUTO_CD
 setopt CORRECT
@@ -46,20 +48,17 @@ setopt NO_CASE_GLOB
 
 autoload -Uz bracketed-paste-magic
 zle -N bracketed-paste bracketed-paste-magic
-unset zle_bracketed_paste
 
 # ── Aliases: ls ──────────────────────────────────────────
-alias ls="eza --icons"
-alias ll="eza -la --icons"
-alias la="eza --icons -a"
-alias tree="eza --tree --icons"
+alias ls="eza --icons=auto"
+alias ll="eza -la --icons=auto --git"
+alias la="eza -a --icons=auto"
+alias tree="eza --tree --icons=auto"
 
 # ── Aliases: core utils ───────────────────────────────────
 if command -v bat &>/dev/null; then
   alias cat="bat"
 fi
-command -v fd &>/dev/null && alias find="fd"
-command -v rg &>/dev/null && alias grep="rg"
 
 # ── Aliases: editor ───────────────────────────────────────
 alias c="code"
@@ -95,8 +94,8 @@ alias autoremove="pacclean"
 
 # ── Aliases: system ───────────────────────────────────────
 alias ribut="sudo reboot"
-alias matikan="sudo poweroff"
-alias shutdown="sudo poweroff"
+alias bismillah='sync && echo 3 | sudo tee /proc/sys/vm/drop_caches && gnome-session-quit --logout --no-prompt'
+alias alhamdulillah='sync && echo 3 | sudo tee /proc/sys/vm/drop_caches && loginctl terminate-user "$USER" || sudo poweroff'
 alias keluar="gnome-session-quit --logout --no-prompt"
 alias lock="loginctl lock-session"
 alias gnome-ver="gnome-shell --version"
@@ -119,6 +118,7 @@ alias hapus="sudo rm -rf"
 
 # ── Aliases: misc ─────────────────────────────────────────
 alias cls="clear"
+alias kitty="$HOME/.local/bin/kitty-gpu"
 alias spa="spicetify apply"
 alias sba="spicetify backup apply"
 alias sup="spicetify update"
@@ -139,8 +139,8 @@ alias dbm="bin/rails db:migrate"
 alias dbr="bin/rails db:rollback"
 alias b="bundle exec"
 alias rails="nocorrect rails"
-alias bismillah="bin/dev"
-alias astagrifullah="rails console"
+alias tuttut="bin/dev"
+alias railsc="rails console"
 
 # ── Aliases: Laravel ──────────────────────────────────────
 alias pa="php artisan"
@@ -153,8 +153,14 @@ alias tinker="php artisan tinker"
 alias forg="cd project/forge/forge"
 alias dev="cd project"
 
-# git
+# ── Aliases: git ──────────────────────────────────────────
 alias clone="git clone"
+
+# ── Aliases: AI CLI ───────────────────────────────────────
+alias agy="agy --dangerously-skip-permissions"
+alias owl="agy"
+alias sonic="claude"
+alias bull="freebuff"
 
 # ── fzf ───────────────────────────────────────────────────
 if [ -f ~/.fzf.zsh ]; then
@@ -190,7 +196,7 @@ cd() {
 }
 
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
-# command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
+command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - zsh)"
 
 # ── NVM lazy load ─────────────────────────────────────────
 export NVM_DIR="$HOME/.nvm"
@@ -199,19 +205,20 @@ _load_nvm() {
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 }
-
-nvm()  { _load_nvm; nvm "$@"; }
-node() { _load_nvm; node "$@"; }
-npm()  { _load_nvm; npm "$@"; }
-npx()  { _load_nvm; npx "$@"; }
-
-# ── Plugins ───────────────────────────────────────────────
-[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
-  source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
-  source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# node/npm pakai versi sistem; nvm baru di-load waktu dipanggil
+nvm() { _load_nvm; nvm "$@"; }
 
 # ── Flatpak helper ────────────────────────────────────────
 flat() {
   flatpak install flathub "$@"
 }
+
+# >>> railway initialize >>>
+[ -f "$HOME/.railway/env" ] && source "$HOME/.railway/env"
+# <<< railway initialize <<<
+
+# ── Plugins (syntax-highlighting harus paling akhir) ─────────────────
+[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+  source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+  source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

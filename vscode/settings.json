@@ -1,12 +1,13 @@
 {
-  "settingsSync.ignoredSettings": [],
-
   // ========================
   // 🎨 UI
   // ========================
   "workbench.colorTheme": "Tokyo Night Dark",
   "workbench.sideBar.location": "right",
   "workbench.iconTheme": "material-icon-theme",
+  "workbench.productIconTheme": "material-product-icons",
+  "workbench.startupEditor": "none",
+  "workbench.editor.highlightModifiedTabs": true,
 
   // ========================
   // ✍️ EDITOR
@@ -23,6 +24,9 @@
 
   "editor.cursorBlinking": "expand",
   "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.stickyScroll.enabled": true,
+  "editor.linkedEditing": true,
   "editor.smoothScrolling": true,
   "editor.mouseWheelZoom": true,
   "editor.minimap.enabled": false,
@@ -43,6 +47,7 @@
   "terminal.integrated.lineHeight": 1.2,
   "terminal.integrated.letterSpacing": 0.5,
   "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.scrollback": 10000,
 
   // ========================
   // 📁 FILE / SEARCH
@@ -50,10 +55,33 @@
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
 
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock, .npmrc",
+    "composer.json": "composer.lock",
+    "Gemfile": "Gemfile.lock",
+    ".env": ".env.*",
+    "tsconfig.json": "tsconfig.*.json",
+  },
+
   "files.exclude": {
     "**/.git": true,
     "**/node_modules": true,
     "**/vendor": true,
+  },
+
+  // Jangan dipantau watcher: bikin VS Code berat di project gede
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/node_modules/**": true,
+    "**/vendor/**": true,
+    "**/storage/**": true,
+    "**/tmp/**": true,
+    "**/log/**": true,
+    "**/.next/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
   },
 
   "search.exclude": {
@@ -63,12 +91,20 @@
     "**/public/build": true,
     "**/tmp": true,
     "**/log": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/*.lock": true,
+    "**/package-lock.json": true,
   },
 
   // ========================
   // 🔧 GIT
   // ========================
   "git.openRepositoryInParentFolders": "never",
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.pruneOnFetch": true,
 
   // ========================
   // 🌈 TERMINAL TRANSPARENT
@@ -86,55 +122,16 @@
   "prettier.arrowParens": "always",
   "prettier.endOfLine": "lf",
 
-  "[javascript]": {
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][css][scss][html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[css]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[scss]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-  },
-
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
   },
 
   // ========================
   // ⚛️ ESLINT + TS
   // ========================
   "js/ts.tsdk": "node_modules/typescript/lib",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
 
   "eslint.validate": [
     "javascript",
@@ -290,7 +287,6 @@
   "dotenv.enableAutocloaking": false,
 
   "[dotenv]": {
-    "editor.defaultFormatter": "foxundermoon.shell-format",
     "editor.formatOnSave": false,
   },
 
@@ -308,7 +304,6 @@
   },
 
   "rubyLsp.formatter": "rubocop",
-  "erb-formatter.htmlFormatter": "prettier",
 
   // ========================
   // 🗄️ DATABASE / SQL
@@ -391,6 +386,6 @@
   // 🔒 SECURITY / TOOLS
   // ========================
   "security.workspace.trust.untrustedFiles": "open",
+  "telemetry.telemetryLevel": "off",
   "claudeCode.preferredLocation": "panel",
-  "workbench.productIconTheme": "material-product-icons",
 }
