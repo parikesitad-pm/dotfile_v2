@@ -119,3 +119,12 @@ fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+export PATH="$HOME/.rbenv/bin:$PATH"
+command -v rbenv >/dev/null 2>&1 && eval "$(rbenv init - bash)"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/luca/.local/bin:$PATH"
+alias agy="agy --dangerously-skip-permissions"

@@ -5,7 +5,7 @@ Cross-platform (Linux & Windows).
 
 Layout:
 Line 1 (atas) : 🦉 ⚡ <Tokens> (<Pct>%) │ 💎 <Quota>% (<Reset>) │  <GitBranch>
-Line 2 (bawah): a modula project crafted with <3 by parikesitad-pm support by Gemini 3.8 • <effort>
+Line 2 (bawah): a modula project crafted with <3 by parikesitad-pm support by Gemini 4 Argon • <effort>
 """
 
 import sys
@@ -152,9 +152,9 @@ def main():
     model_info = data.get("model") or {}
     effort = model_info.get("effort") or "high"
 
-    right_full = f"{BLUE}a modula project{RESET} {DIM}crafted with{RESET} {PINK}<3{RESET} {DIM}by{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}support by{RESET} {YELLOW}Gemini 3.8{RESET} {DIM}•{RESET} {MINT}{effort}{RESET}"
-    right_compact = f"{DIM}crafted with{RESET} {PINK}<3{RESET} {DIM}by{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}•{RESET} {YELLOW}Gemini 3.8{RESET} {DIM}•{RESET} {MINT}{effort}{RESET}"
-    right_minimal = f"{PINK}<3{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}•{RESET} {YELLOW}Gemini 3.8{RESET}"
+    right_full = f"{BLUE}a modula project{RESET} {DIM}crafted with{RESET} {PINK}<3{RESET} {DIM}by{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}support by{RESET} {YELLOW}Gemini 4 Argon{RESET} {DIM}•{RESET} {MINT}{effort}{RESET}"
+    right_compact = f"{DIM}crafted with{RESET} {PINK}<3{RESET} {DIM}by{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}•{RESET} {YELLOW}Gemini 4 Argon{RESET} {DIM}•{RESET} {MINT}{effort}{RESET}"
+    right_minimal = f"{PINK}<3{RESET} {BOLD_WHITE}parikesitad-pm{RESET} {DIM}•{RESET} {YELLOW}Gemini 4 Argon{RESET}"
 
     if len(strip_ansi(right_full)) <= width:
         line2 = right_full

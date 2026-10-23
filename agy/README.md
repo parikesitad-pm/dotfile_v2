@@ -19,7 +19,7 @@
 
 ```text
 🦉 ⚡ 232.3k (11.1%) │ 💎 75% (3j 22m) │  main*
-a modula project crafted with <3 by parikesitad-pm support by Gemini 3.8 • high
+a modula project crafted with <3 by parikesitad-pm support by Gemini 4 Argon • high
 ```
 
 * **Baris 1**:
@@ -28,7 +28,7 @@ a modula project crafted with <3 by parikesitad-pm support by Gemini 3.8 • hig
   * 💎 **Live Quota** (sisa kuota Gemini 5 jam + hitung mundur waktu reset)
   *  **Git Branch** (nama branch aktif + tanda `*` jika dirty/ada uncommitted changes)
 * **Baris 2**:
-  * Branding: `a modula project crafted with <3 by parikesitad-pm support by Gemini 3.8 • high` (otomatis responsif mengecil jika terminal dipersempit)
+  * Branding: `a modula project crafted with <3 by parikesitad-pm support by Gemini 4 Argon • high` (otomatis responsif mengecil jika terminal dipersempit)
 
 ---
 
